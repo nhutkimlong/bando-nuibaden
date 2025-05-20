@@ -6,9 +6,6 @@
     "build": "echo 'No build step required'"
   },
   "devDependencies": {
-    "@netlify/plugin-lighthouse": "^4.0.0",
-    "netlify-plugin-minify-html": "^0.3.0",
-    "netlify-plugin-minify-js": "^1.0.0",
-    "netlify-plugin-minify-css": "^1.0.0"
+    "@netlify/plugin-lighthouse": "^4.0.0"
   }
 } 

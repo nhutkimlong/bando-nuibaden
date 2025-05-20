@@ -5,41 +5,9 @@
 [build.environment]
   NODE_VERSION = "18"
 
-# HTML Minification
-[[plugins]]
-  package = "netlify-plugin-minify-html"
-  [plugins.inputs]
-    minify = true
-
-# CSS Minification
-[[plugins]]
-  package = "netlify-plugin-minify-css"
-  [plugins.inputs]
-    minify = true
-    bundle = true
-
-# JavaScript Minification
-[[plugins]]
-  package = "netlify-plugin-minify-js"
-  [plugins.inputs]
-    minify = true
-    bundle = true
-    mangle = true
-    compress = true
-
 # Lighthouse Performance Monitoring
 [[plugins]]
   package = "@netlify/plugin-lighthouse"
-
-# Image Optimization
-[[plugins]]
-  package = "@netlify/plugin-image-optim"
-
-[plugins.inputs]
-  quality = 80
-  format = "webp"
-  width = 1920
-  height = 1080
 
 [[redirects]]
   from = "/*"
