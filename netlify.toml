@@ -8,14 +8,24 @@
 # HTML Minification
 [[plugins]]
   package = "netlify-plugin-minify-html"
+  [plugins.inputs]
+    minify = true
 
 # CSS Minification
 [[plugins]]
   package = "netlify-plugin-minify-css"
+  [plugins.inputs]
+    minify = true
+    bundle = true
 
 # JavaScript Minification
 [[plugins]]
   package = "netlify-plugin-minify-js"
+  [plugins.inputs]
+    minify = true
+    bundle = true
+    mangle = true
+    compress = true
 
 # Lighthouse Performance Monitoring
 [[plugins]]
@@ -30,16 +40,6 @@
   format = "webp"
   width = 1920
   height = 1080
-
-[plugins.inputs]
-  minify = true
-  bundle = true
-
-[plugins.inputs]
-  minify = true
-  bundle = true
-  mangle = true
-  compress = true
 
 [[redirects]]
   from = "/*"
