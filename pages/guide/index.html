@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cẩm nang du lịch Núi Bà Đen - Hướng dẫn chi tiết về các điểm tham quan, lịch trình, kinh nghiệm và thông tin hữu ích cho du khách.">
+    <meta http-equiv="Content-Language" content="vi">
+    <meta name="language" content="Vietnamese">
+    <meta name="google" content="translate">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <title>Cẩm nang du lịch Núi Bà Đen</title>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="../../assets/images/favicon-32x32.png">
+
+    <!-- Removed Leaflet and Cropper CSS - Add if needed for guide page -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
+
+    <link rel="stylesheet" href="../../css/main.css">
+    <link rel="stylesheet" href="../../css/guide.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#10b981',
+                            600: '#047857',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b'
+                        },
+                        accent: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0369a1',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-50 text-gray-800 font-sans antialiased">
+
+    <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-gray-100">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <img src="../../assets/images/android-chrome-512x512.png" alt="Logo Núi Bà Đen" class="w-12 h-12 rounded-full object-cover border-2 border-primary-100">
+                    <div>
+                        <h1 class="text-base sm:text-lg md:text-xl font-bold text-primary-600">Cẩm nang du lịch Núi Bà Đen</h1>
+                        <p class="text-xs text-gray-500 hidden sm:block">Tây Ninh, Việt Nam</p>
+                    </div>
+                </div>
+                
+                <nav class="hidden md:block">
+                    <ul class="flex space-x-8">
+                        <li><a href="../../index.html" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Trang chủ</a></li>
+                        <li><a href="../map/index.html" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Bản đồ số</a></li>
+                        <li><a href="index.html" class="nav-link active px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Cẩm nang du lịch</a></li>
+                        <li><a href="../climb/index.html" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Đăng ký leo núi</a></li>
+                        <li><a href="../../index.html#footer" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Liên hệ</a></li>
+                    </ul>
+                </nav>
+                
+                <button id="mobile-menu-button" class="md:hidden text-gray-600 hover:text-primary-500 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="mobile-menu" class="hidden md:hidden mt-3 border-t border-gray-100 pt-3">
+                <ul class="space-y-2">
+                    <li><a href="../../index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Trang chủ</a></li>
+                    <li><a href="../map/index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Bản đồ số</a></li>
+                    <li><a href="index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200 bg-gray-50 rounded-md text-primary-500">Cẩm nang du lịch</a></li>
+                    <li><a href="../climb/index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Đăng ký leo núi</a></li>
+                    <li><a href="../../index.html#footer" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Liên hệ</a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <!-- <div id="messageBox" class="message-box z-[150]"></div> -->
+
+    <div class="container mx-auto px-4 py-8 md:px-6 md:py-12 max-w-6xl">
+
+        <header class="text-center mb-10 md:mb-16">
+            <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-orange-600 mb-3 tracking-tight">Cẩm nang du lịch Núi Bà Đen</h1>
+            <p class="text-lg md:text-xl text-gray-600">Khám phá trọn vẹn Núi Bà Đen với các gợi ý tour, ẩm thực, lưu trú và đặc sản nổi bật.</p>
+        </header>
+
+        <main class="space-y-10 md:space-y-16">
+            <!-- CONTENT FOR GUIDE PAGE WILL GO HERE -->
+            <section id="tours" class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl md:text-3xl font-semibold mb-6 text-primary-700 border-b border-primary-200 pb-4 flex items-center">
+                    <i class="fa-solid fa-route text-3xl text-primary-600 mr-4"></i>
+                    Chương trình tour gợi ý
+                </h2>
+                <!-- MODIFIED: Container for dynamic tour cards -->
+                <div id="tours-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Tour cards will be dynamically inserted here by js/guide.js -->
+                    <div id="loading-tours" class="text-center py-5 text-gray-500 col-span-full" style="display: none;">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Đang tải chương trình tour...
+                    </div>
+                </div>
+                <!-- ADDED: Pagination controls for tours -->
+                <div id="tours-pagination" class="pagination-controls mt-8 text-center">
+                    <!-- Pagination buttons will be inserted here -->
+                </div>
+            </section>
+
+            <section id="accommodations" class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl md:text-3xl font-semibold mb-6 text-accent-700 border-b border-accent-200 pb-4 flex items-center">
+                    <i class="fa-solid fa-hotel text-3xl text-accent-600 mr-4"></i>
+                    Khách sạn và Lưu trú
+                </h2>
+                <!-- MODIFIED: Container for dynamic accommodation cards -->
+                <div id="accommodations-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Accommodation cards will be dynamically inserted here -->
+                    <div id="loading-accommodations" class="text-center py-5 text-gray-500 col-span-full" style="display: none;">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Đang tải thông tin lưu trú...
+                    </div>
+                </div>
+                <!-- ADDED: Pagination controls for accommodations -->
+                <div id="accommodations-pagination" class="pagination-controls mt-8 text-center">
+                    <!-- Pagination buttons will be inserted here -->
+                </div>
+            </section>
+
+            <section id="restaurants" class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl md:text-3xl font-semibold mb-6 text-orange-700 border-b border-orange-200 pb-4 flex items-center">
+                    <i class="fa-solid fa-utensils text-3xl text-orange-600 mr-4"></i>
+                    Địa điểm ăn uống
+                </h2>
+                 <!-- MODIFIED: Container for dynamic restaurant cards -->
+                <div id="restaurants-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Restaurant cards will be dynamically inserted here -->
+                    <div id="loading-restaurants" class="text-center py-5 text-gray-500 col-span-full" style="display: none;">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Đang tải địa điểm ăn uống...
+                    </div>
+                </div>
+                <!-- ADDED: Pagination controls for restaurants -->
+                <div id="restaurants-pagination" class="pagination-controls mt-8 text-center">
+                    <!-- Pagination buttons will be inserted here -->
+                </div>
+            </section>
+
+            <section id="specialties" class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl md:text-3xl font-semibold mb-6 text-lime-700 border-b border-lime-200 pb-4 flex items-center">
+                    <i class="fa-solid fa-pepper-hot text-3xl text-lime-600 mr-4"></i>
+                    Đặc sản địa phương
+                </h2>
+                <!-- MODIFIED: Container for dynamic specialty cards -->
+                <div id="specialties-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Specialty cards will be dynamically inserted here -->
+                    <div id="loading-specialties" class="text-center py-5 text-gray-500 col-span-full" style="display: none;">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Đang tải thông tin đặc sản...
+                    </div>
+                </div>
+                <!-- ADDED: Pagination controls for specialties -->
+                <div id="specialties-pagination" class="pagination-controls mt-8 text-center">
+                    <!-- Pagination buttons will be inserted here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer for this page, if different, or rely on the main one below -->
+         <footer class="text-center mt-16 pt-8 border-t border-gray-200 text-sm text-gray-500">
+            <p class="mt-1">Chúc quý khách có những trải nghiệm tuyệt vời tại Núi Bà Đen!</p>
+        </footer>
+    </div>
+
+    <!-- Removed Leaflet and Cropper JS - Add if needed -->
+
+    <script src="../../js/guide.js" defer></script>
+
+    <!-- Footer -->
+    <footer id="footer" class="bg-white pt-16 pb-8 px-4 border-t border-gray-100 mt-auto">
+        <div class="container mx-auto max-w-5xl">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <img src="../../assets/images/android-chrome-512x512.png" alt="Logo Núi Bà Đen" class="w-10 h-10 rounded-full">
+                        <h3 class="font-bold text-lg text-gray-800">KDL quốc gia Núi Bà Đen</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">"Nóc nhà Nam Bộ" - điểm đến tâm linh và du lịch sinh thái hấp dẫn hàng đầu Việt Nam.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Liên kết nhanh</h3>
+                    <ul class="space-y-2">
+                        <li><a href="../../index.html" class="text-gray-600 hover:text-primary-500 transition duration-200">Trang chủ</a></li>
+                        <li><a href="../map/index.html" class="text-gray-600 hover:text-primary-500 transition duration-200">Bản đồ số</a></li>
+                        <li><a href="index.html" class="text-gray-600 hover:text-primary-500 transition duration-200">Cẩm nang du lịch</a></li>
+                        <li><a href="../climb/index.html" class="text-gray-600 hover:text-primary-500 transition duration-200">Đăng ký leo núi</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Thông tin liên hệ</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <i class="fas fa-envelope text-gray-400 mt-1.5 w-5"></i>
+                            <a href="mailto:bqlnuiba@gmail.com" class="ml-2 text-gray-600 hover:text-primary-500 transition duration-200">bqlnuiba@gmail.com</a>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fab fa-facebook text-gray-400 mt-1.5 w-5"></i>
+                            <a href="https://www.facebook.com/bqlkdlquocgianuibaden" target="_blank" class="ml-2 text-gray-600 hover:text-primary-500 transition duration-200">Fanpage Facebook</a>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fab fa-tiktok text-gray-400 mt-1.5 w-5"></i>
+                            <a href="https://www.tiktok.com/@nuibadenbql" target="_blank" class="ml-2 text-gray-600 hover:text-primary-500 transition duration-200">nuibadenbql (TikTok)</a>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-globe text-gray-400 mt-1.5 w-5"></i>
+                            <a href="http://khudulichnuibaden.tayninh.gov.vn" target="_blank" class="ml-2 text-gray-600 hover:text-primary-500 transition duration-200">khudulichnuibaden.tayninh.gov.vn</a>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-phone text-gray-400 mt-1.5 w-5"></i>
+                            <a href="tel:02763823378" class="ml-2 text-gray-600 hover:text-primary-500 transition duration-200">0276 3823378</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-100 pt-6 text-center">
+                <p class="text-gray-500 text-sm">&copy; <span id="currentYear"></span> Ban Quản lý Khu du lịch quốc gia Núi Bà Đen.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../../js/main.js" defer></script>
+</body>
+</html> 

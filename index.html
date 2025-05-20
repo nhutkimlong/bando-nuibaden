@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Khám phá Khu du lịch quốc gia Núi Bà Đen, Tây Ninh - 'Nóc nhà Nam Bộ'. Thông tin du lịch, bản đồ số, đăng ký leo núi và những hình ảnh tuyệt đẹp.">
+    <meta http-equiv="Content-Language" content="vi">
+    <meta name="language" content="Vietnamese">
+    <meta name="google" content="translate">
+    <title>Khu du lịch quốc gia Núi Bà Đen - Trang chủ</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="theme-color" content="#10b981">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://nuibaden.netlify.app/">
+    <meta property="og:title" content="Khu du lịch quốc gia Núi Bà Đen">
+    <meta property="og:description" content="Khám phá Khu du lịch quốc gia Núi Bà Đen, Tây Ninh - 'Nóc nhà Nam Bộ'. Thông tin du lịch, bản đồ số, đăng ký leo núi và những hình ảnh tuyệt đẹp.">
+    <meta property="og:image" content="https://nuibaden.netlify.app/assets/images/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://nuibaden.netlify.app/">
+    <meta property="twitter:title" content="Khu du lịch quốc gia Núi Bà Đen">
+    <meta property="twitter:description" content="Khám phá Khu du lịch quốc gia Núi Bà Đen, Tây Ninh - 'Nóc nhà Nam Bộ'. Thông tin du lịch, bản đồ số, đăng ký leo núi và những hình ảnh tuyệt đẹp.">
+    <meta property="twitter:image" content="https://nuibaden.netlify.app/assets/images/og-image.jpg">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://nuibaden.netlify.app/">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#10b981', /* Primary color */
+                            600: '#047857', /* Darker shade */
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b'
+                        },
+                        accent: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9', /* Accent color */
+                            600: '#0369a1', /* Darker shade */
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Shared Styles -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="preload" as="image" href="assets/images/background.webp">
+</head>
+<body class="bg-gradient-to-br from-green-50 via-emerald-50 to-blue-50 font-sans antialiased text-gray-800">
+    <!-- Header -->
+    <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-gray-100">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <img src="assets/images/android-chrome-512x512.png" alt="Logo Núi Bà Đen" class="w-12 h-12 rounded-full object-cover border-2 border-primary-100">
+                    <div>
+                        <h1 class="text-base sm:text-lg md:text-xl font-bold text-primary-600">Khu du lịch quốc gia Núi Bà Đen</h1>
+                        <p class="text-xs text-primary-700 hidden sm:block">Tây Ninh, Việt Nam</p>
+                    </div>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <nav class="hidden md:block">
+                    <ul class="flex space-x-8">
+                        <li><a href="index.html" class="nav-link active px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Trang chủ</a></li>
+                        <li><a href="pages/map/index.html" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Bản đồ số</a></li>
+                        <li><a href="pages/guide/index.html" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Cẩm nang du lịch</a></li>
+                        <li><a href="pages/climb/index.html" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Đăng ký leo núi</a></li>
+                        <li><a href="#footer" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Liên hệ</a></li>
+                    </ul>
+                </nav>
+                
+                <!-- Mobile menu button -->
+                <button id="mobile-menu-button" class="md:hidden text-gray-700 hover:text-primary-700 focus:outline-none" aria-label="Mở menu điều hướng">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Mobile Navigation -->
+            <div id="mobile-menu" class="hidden md:hidden mt-3 border-t border-gray-100 pt-3">
+                <ul class="space-y-2">
+                    <li><a href="index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200 bg-gray-50 rounded-md text-primary-500">Trang chủ</a></li>
+                    <li><a href="pages/map/index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Bản đồ số</a></li>
+                    <li><a href="pages/guide/index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Cẩm nang du lịch</a></li>
+                    <li><a href="pages/climb/index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Đăng ký leo núi</a></li>
+                    <li><a href="#footer" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Liên hệ</a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-bg min-h-[60vh] md:min-h-[70vh] flex flex-col items-center justify-center text-center text-white px-4 py-16 sm:py-24">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl md:text-4xl lg:text-6xl font-extrabold mb-4 leading-tight drop-shadow-lg">Khám phá vẻ đẹp hùng vĩ <br class="hidden md:block"> Núi Bà Đen</h1>
+            <p class="text-base md:text-xl text-gray-100 mb-8 max-w-2xl mx-auto drop-shadow-md">"Nóc nhà Nam Bộ" - điểm đến tâm linh và du lịch sinh thái hấp dẫn.</p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="#features" class="bg-primary-500 hover:bg-primary-600 text-white font-bold py-3 px-6 rounded-full inline-flex items-center space-x-2 transition duration-300 transform hover:scale-105 shadow-lg">
+                    <span>Khám phá ngay</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+                <a href="https://booking.sunworld.vn/catalog?land=SunParadiseLandTayNinh" target="_blank" rel="noopener noreferrer" class="bg-accent-500 hover:bg-accent-600 text-white font-bold py-3 px-6 rounded-full inline-flex items-center space-x-2 transition duration-300 transform hover:scale-105 shadow-lg">
+                    <span>Đặt vé trực tuyến</span>
+                    <i class="fas fa-ticket-alt"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-12 px-4 -mt-20 sm:-mt-24 md:-mt-32 relative z-20">
+        <div class="container mx-auto max-w-5xl">
+            <p class="text-center text-lg sm:text-xl font-semibold text-white mb-8">Xin kính chào quý du khách!</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <!-- Card 1: Digital Map -->
+                <div class="feature-card bg-white rounded-xl shadow-xl overflow-hidden border-t-4 border-accent-500 h-full flex flex-col">
+                    <div class="p-6 sm:p-8 flex flex-col flex-grow">
+                        <div class="mx-auto w-16 h-16 bg-accent-100 rounded-full flex items-center justify-center text-accent-500 mb-6">
+                            <i class="fas fa-map-location-dot text-3xl"></i>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-accent-700 mb-3">Bản đồ Du lịch Số</h2>
+                        <p class="text-gray-600 mb-4">Khám phá Núi Bà Đen trực quan và tiện lợi:</p>
+                        <ul class="space-y-2 mb-8">
+                            <li class="flex items-start">
+                                <i class="fas fa-search text-accent-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Tìm kiếm địa điểm theo tên, loại hình.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-directions text-accent-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Chỉ dẫn đường đi bộ, cáp treo, máng trượt.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-street-view text-accent-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Xác định vị trí hiện tại của bạn.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-info-circle text-accent-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Xem thông tin chi tiết điểm đến.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-clock text-accent-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Kiểm tra giờ hoạt động (cáp treo, dịch vụ).</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-language text-accent-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Hỗ trợ ngôn ngữ Việt/Anh.</span>
+                            </li>
+                        </ul>
+                        <div class="mt-auto">
+                            <a href="pages/map/index.html" class="inline-block bg-accent-500 hover:bg-accent-600 text-white font-bold py-3 px-6 rounded-full shadow-md transition duration-300 flex items-center justify-center space-x-2">
+                                <span>Truy cập Bản đồ</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ADDED: Card for Travel Guide -->
+                <div class="feature-card bg-white rounded-xl shadow-xl overflow-hidden border-t-4 border-orange-500 h-full flex flex-col">
+                    <div class="p-6 sm:p-8 flex flex-col flex-grow">
+                        <div class="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 mb-6">
+                            <i class="fas fa-book-open-reader text-3xl"></i>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-orange-700 mb-3">Cẩm nang Du lịch</h2>
+                        <p class="text-gray-600 mb-4">Thông tin hữu ích cho chuyến đi của bạn:</p>
+                        <ul class="space-y-2 mb-8">
+                            <li class="flex items-start">
+                                <i class="fas fa-route text-orange-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Các chương trình tour gợi ý.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-hotel text-orange-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Khách sạn, nhà nghỉ, homestay.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-utensils text-orange-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Nhà hàng, quán ăn ngon.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-pepper-hot text-orange-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Đặc sản địa phương hấp dẫn.</span>
+                            </li>
+                        </ul>
+                        <div class="mt-auto">
+                            <a href="pages/guide/index.html" class="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-full shadow-md transition duration-300 flex items-center justify-center space-x-2">
+                                <span>Xem cẩm nang</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 3: Mountain Climbing -->
+                <div class="feature-card bg-white rounded-xl shadow-xl overflow-hidden border-t-4 border-primary-500 h-full flex flex-col">
+                    <div class="p-6 sm:p-8 flex flex-col flex-grow">
+                        <div class="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center text-primary-500 mb-6">
+                            <i class="fas fa-hiking text-3xl"></i>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-primary-700 mb-3">Đăng ký leo núi</h2>
+                        <p class="text-gray-600 mb-4">Chuẩn bị chinh phục "Nóc nhà Nam Bộ":</p>
+                        <ul class="space-y-2 mb-8">
+                            <li class="flex items-start">
+                                <i class="fas fa-clipboard-list text-primary-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Đăng ký thông tin leo núi.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-calendar-check text-primary-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Cam kết tuân thủ quy định an toàn.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-primary-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Nhận xác nhận trước chuyến đi.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-award text-primary-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Nhận chứng nhận điện tử khi hoàn thành.</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-headset text-primary-500 mt-1 w-5"></i>
+                                <span class="ml-2 text-gray-600">Hỗ trợ thông tin cần thiết cho trekker.</span>
+                            </li>
+                        </ul>
+                        <div class="mt-auto">
+                            <a href="pages/climb/index.html" class="inline-block bg-primary-500 hover:bg-primary-600 text-white font-bold py-3 px-6 rounded-full shadow-md transition duration-300 flex items-center justify-center space-x-2">
+                                <span>Đăng ký ngay</span>
+                                <i class="fas fa-signature"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- About Section -->
+    <section class="py-16 px-4">
+        <div class="container mx-auto max-w-5xl">
+            <h2 class="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-800">Về Núi Bà Đen</h2>
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <p class="text-gray-600 mb-4">Núi Bà Đen là ngọn núi cao nhất Nam Bộ với độ cao 986m, nằm tại tỉnh Tây Ninh, Việt Nam. Núi Bà được mệnh danh là "Đệ nhất thiên sơn" của vùng Đông Nam Bộ.</p>
+                        <p class="text-gray-600 mb-4">Đây không chỉ là điểm du lịch sinh thái hấp dẫn mà còn là trung tâm tâm linh với nhiều di tích lịch sử văn hoá quan trọng như Điện Bà, chùa Linh Sơn Tiên Thạch.</p>
+                        <p class="text-gray-600">Hệ thống cáp treo hiện đại và các tiện ích du lịch ngày càng được đầu tư đã giúp Núi Bà Đen trở thành điểm đến hấp dẫn cho du khách từ khắp nơi.</p>
+                    </div>
+                    <div class="bg-gray-100 p-6 rounded-lg">
+                        <h3 class="text-xl font-semibold text-primary-600 mb-4">Thông tin cơ bản</h3>
+                        <ul class="space-y-3">
+                            <li class="flex items-start">
+                                <i class="fas fa-mountain text-primary-500 mt-1 w-5"></i>
+                                <span class="ml-2">Độ cao: 986m (so với mực nước biển)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-map-marker-alt text-primary-500 mt-1 w-5"></i>
+                                <span class="ml-2">Vị trí: Thành phố Tây Ninh, tỉnh Tây Ninh</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-route text-primary-500 mt-1 w-5"></i>
+                                <span class="ml-2">Cách TP. Hồ Chí Minh khoảng 100km</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-clock text-primary-500 mt-1 w-5"></i>
+                                <span class="ml-2">Giờ mở cửa: 7:00 - 18:00 (có thể thay đổi theo mùa)</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section class="py-16 px-4 bg-gray-50">
+        <div class="container mx-auto max-w-5xl">
+            <h2 class="text-2xl md:text-3xl font-bold text-center mb-2 text-gray-800">Khám phá hình ảnh</h2>
+            <p class="text-center text-gray-600 mb-8">Một số hình ảnh đẹp về Núi Bà Đen</p>
+            
+            <!-- Image gallery would go here - for now using placeholders -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="aspect-square rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center">
+                    <img src="assets/images/gallery/placeholder-1-800.webp" srcset="assets/images/gallery/placeholder-1-400.webp 400w, assets/images/gallery/placeholder-1-800.webp 800w, assets/images/gallery/placeholder-1-1200.webp 1200w" sizes="(max-width: 600px) 400px, (max-width: 1024px) 800px, 1200px" alt="Chùa Bà tại Núi Bà Đen" class="w-full h-full object-cover" loading="lazy">
+                </div>
+                <div class="aspect-square rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center">
+                    <img src="assets/images/gallery/placeholder-2-800.webp" srcset="assets/images/gallery/placeholder-2-400.webp 400w, assets/images/gallery/placeholder-2-800.webp 800w, assets/images/gallery/placeholder-2-1200.webp 1200w" sizes="(max-width: 600px) 400px, (max-width: 1024px) 800px, 1200px" alt="Tượng Phật trên đỉnh núi" class="w-full h-full object-cover" loading="lazy">
+                </div>
+                <div class="aspect-square rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center">
+                    <img src="assets/images/gallery/placeholder-3-800.webp" srcset="assets/images/gallery/placeholder-3-400.webp 400w, assets/images/gallery/placeholder-3-800.webp 800w, assets/images/gallery/placeholder-3-1200.webp 1200w" sizes="(max-width: 600px) 400px, (max-width: 1024px) 800px, 1200px" alt="Cột mốc 986m" class="w-full h-full object-cover" loading="lazy">
+                </div>
+                <div class="aspect-square rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center">
+                    <img src="assets/images/gallery/placeholder-4-800.webp" srcset="assets/images/gallery/placeholder-4-400.webp 400w, assets/images/gallery/placeholder-4-800.webp 800w, assets/images/gallery/placeholder-4-1200.webp 1200w" sizes="(max-width: 600px) 400px, (max-width: 1024px) 800px, 1200px" alt="Toàn cảnh Núi Bà Đen từ trên cao" class="w-full h-full object-cover" loading="lazy">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="footer" class="bg-white pt-16 pb-8 px-4 border-t border-gray-100">
+        <div class="container mx-auto max-w-5xl">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <img src="assets/images/android-chrome-512x512.png" alt="Logo Núi Bà Đen" class="w-10 h-10 rounded-full">
+                        <h3 class="font-bold text-lg text-gray-800">KDL quốc gia Núi Bà Đen</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4">"Nóc nhà Nam Bộ" - điểm đến tâm linh và du lịch sinh thái hấp dẫn hàng đầu Việt Nam.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Liên kết nhanh</h3>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="text-gray-600 hover:text-primary-500 transition duration-200">Trang chủ</a></li>
+                        <li><a href="pages/map/index.html" class="text-gray-600 hover:text-primary-500 transition duration-200">Bản đồ số</a></li>
+                        <li><a href="pages/guide/index.html" class="text-gray-600 hover:text-primary-500 transition duration-200">Cẩm nang du lịch</a></li>
+                        <li><a href="pages/climb/index.html" class="text-gray-600 hover:text-primary-500 transition duration-200">Đăng ký leo núi</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Thông tin liên hệ</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-start">
+                            <i class="fas fa-envelope text-gray-400 mt-1.5 w-5"></i>
+                            <a href="mailto:bqlnuiba@gmail.com" class="ml-2 text-gray-600 hover:text-primary-500 transition duration-200">bqlnuiba@gmail.com</a>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fab fa-facebook text-gray-400 mt-1.5 w-5"></i>
+                            <a href="https://www.facebook.com/bqlkdlquocgianuibaden" target="_blank" class="ml-2 text-gray-600 hover:text-primary-500 transition duration-200">Fanpage Facebook</a>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fab fa-tiktok text-gray-400 mt-1.5 w-5"></i>
+                            <a href="https://www.tiktok.com/@nuibadenbql" target="_blank" class="ml-2 text-gray-600 hover:text-primary-500 transition duration-200">nuibadenbql (TikTok)</a>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-globe text-gray-400 mt-1.5 w-5"></i>
+                            <a href="http://khudulichnuibaden.tayninh.gov.vn" target="_blank" class="ml-2 text-gray-600 hover:text-primary-500 transition duration-200">khudulichnuibaden.tayninh.gov.vn</a>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-phone text-gray-400 mt-1.5 w-5"></i>
+                            <a href="tel:02763823378" class="ml-2 text-gray-600 hover:text-primary-500 transition duration-200">0276 3823378</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-100 pt-6 text-center">
+                <p class="text-gray-500 text-sm">&copy; <span id="currentYear"></span> Ban Quản lý Khu du lịch quốc gia Núi Bà Đen</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

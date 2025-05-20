@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="Bản đồ số Khu du lịch quốc gia Núi Bà Đen - Tìm kiếm địa điểm, chỉ đường, thông tin chi tiết và thuyết minh audio.">
+    <meta http-equiv="Content-Language" content="vi">
+    <meta name="language" content="Vietnamese">
+    <meta name="google" content="translate">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Bản đồ số du lịch - Khu du lịch quốc gia Núi Bà Đen</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="../../assets/images/favicon-32x32.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            300: '#86efac',
+                            400: '#4ade80',
+                            500: '#10b981', /* Primary color */
+                            600: '#047857', /* Darker shade */
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b'
+                        },
+                        accent: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9', /* Accent color */
+                            600: '#0369a1', /* Darker shade */
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Shared Custom Styles -->
+    <link rel="stylesheet" href="../../css/main.css">
+    <!-- Page-Specific Styles -->
+    <link rel="stylesheet" href="../../css/map.css">
+
+    <style>
+    /* Map Controls Styling */
+    .map-action-button, .fab {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .map-action-button:hover, .fab:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .map-action-button i, .fab i {
+        font-size: 1.3rem;
+        color: #10b981;
+    }
+
+    .map-controls-container {
+        display: flex;
+        flex-direction: column;
+        gap: 18px !important;
+    }
+    .zoom-controls-desktop {
+        position: absolute;
+        right: 2rem;
+        bottom: 2rem;
+        z-index: 1001;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 0;
+        border-radius: 12px !important;
+        overflow: hidden;
+        background: transparent;
+        box-shadow: none;
+    }
+    .zoom-controls-desktop button {
+        margin: 0 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    }
+    @media (max-width: 768px) {
+        .map-controls-container {
+            gap: 16px !important;
+        }
+        .zoom-controls-desktop {
+            position: static;
+            right: unset;
+            bottom: unset;
+            gap: 10px;
+            margin: 12px 0;
+        }
+    }
+
+    /* Icon colors */
+    #locate-btn i, #fab-locate i {
+        color: #3b82f6;
+    }
+
+    #show-tutorial-button i {
+        color: #f59e0b;
+    }
+
+    #show-contact-button i {
+        color: #6366f1;
+    }
+
+    #map-layers-desktop i, #fab-layers i {
+        color: #8b5cf6;
+    }
+
+    #fab-directions i {
+        color: #10b981;
+    }
+
+    /* Mobile specific styles */
+    .floating-action-buttons {
+        gap: 12px;
+    }
+
+    .fab {
+        background: #ffffff;
+    }
+
+    #fab-locate {
+        background: #3b82f6;
+    }
+
+    #fab-locate i {
+        color: #ffffff;
+    }
+
+    #fab-directions {
+        background: #10b981;
+    }
+
+    #fab-directions i {
+        color: #ffffff;
+    }
+
+    #fab-layers {
+        background: #ffffff;
+    }
+    </style>
+
+</head>
+<body class="font-sans antialiased text-gray-800 bg-gray-50">
+    <!-- Common Header -->
+    <header class="bg-white/90 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-gray-100">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <img src="../../assets/images/android-chrome-512x512.png" alt="Logo Núi Bà Đen" class="w-12 h-12 rounded-full object-cover border-2 border-primary-100">
+                    <div>
+                        <h1 class="text-base sm:text-lg md:text-xl font-bold text-primary-600">Bản đồ số du lịch Núi Bà Đen</h1>
+                        <p class="text-xs text-gray-500 hidden sm:block">Tây Ninh, Việt Nam</p>
+                    </div>
+                </div>
+                
+                <nav class="hidden md:block">
+                    <ul class="flex space-x-8">
+                        <li><a href="../../index.html" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Trang chủ</a></li>
+                        <li><a href="../map/index.html" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Bản đồ số</a></li>
+                        <li><a href="../guide/index.html" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Cẩm nang du lịch</a></li>
+                        <li><a href="../climb/index.html" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Đăng ký leo núi</a></li>
+                        <li><a href="../../index.html#footer" class="nav-link px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Liên hệ</a></li>
+                    </ul>
+                </nav>
+                
+                <button id="mobile-menu-button" class="md:hidden text-gray-600 hover:text-primary-500 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="mobile-menu" class="hidden md:hidden mt-3 border-t border-gray-100 pt-3">
+                <ul class="space-y-2">
+                    <li><a href="../../index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Trang chủ</a></li>
+                    <li><a href="../map/index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200 bg-gray-50 rounded-md text-primary-500">Bản đồ số</a></li>
+                    <li><a href="../guide/index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Cẩm nang du lịch</a></li>
+                    <li><a href="../climb/index.html" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Đăng ký leo núi</a></li>
+                    <li><a href="../../index.html#footer" class="block px-2 py-2 font-medium hover:text-primary-500 transition duration-200">Liên hệ</a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
+    <main class="flex-grow overflow-hidden"> <div class="map-container"> <div class="top-bar bg-white border-b border-gray-200 p-2 sm:p-3 md:p-4 shadow-sm">
+                <div class="search-bar relative flex items-center bg-gray-100 rounded-full px-3 sm:px-4 py-1.5 sm:py-2 mb-2 sm:mb-3">
+                    <input type="text" placeholder="Tìm kiếm địa điểm..." id="search-input-main" class="flex-grow border-none outline-none bg-transparent text-sm sm:text-base text-gray-700 placeholder-gray-500">
+                    <span class="icon search-icon-main text-gray-400 pl-2 cursor-pointer"><i class="fas fa-search"></i></span>
+                    <button type="button" id="directions-icon-search" class="icon text-primary-500 hover:text-primary-600 pl-2 hidden md:inline-flex items-center justify-center" aria-label="Tìm đường">
+                        <i class="fas fa-route"></i>
+                    </button>
+                    <div id="search-results-dropdown" class="absolute left-0 right-0 top-full w-full sm:w-[400px] md:w-[500px] mx-auto sm:mx-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-[1002] overflow-y-auto max-h-60" style="display: none;"></div>
+                </div>
+
+                <div class="filter-categories-wrapper relative flex items-center">
+                    <button id="filter-scroll-left" class="hidden md:flex absolute left-0 z-10 h-full items-center justify-center px-2 bg-white/80 hover:bg-white rounded-l-lg shadow transition-all" style="top:0; bottom:0;">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="filter-categories flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 w-full" style="scroll-behavior: smooth;"></div>
+                    <button id="filter-scroll-right" class="hidden md:flex absolute right-0 z-10 h-full items-center justify-center px-2 bg-white/80 hover:bg-white rounded-r-lg shadow transition-all" style="top:0; bottom:0;">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="route-inputs" class="p-2 sm:p-3 bg-white border-b border-gray-200 shadow-md" style="display: none;">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+                    <div class="relative">
+                        <input type="text" id="start-input" placeholder="Điểm bắt đầu" class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700 placeholder-gray-400">
+                        <div id="start-suggestions" class="suggestions-box absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-[25] overflow-y-auto max-h-40" style="display: none;"></div>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="end-input" placeholder="Điểm kết thúc" class="w-full p-2 border border-gray-300 rounded-md text-sm bg-white text-gray-700 placeholder-gray-400">
+                        <div id="end-suggestions" class="suggestions-box absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg z-[25] overflow-y-auto max-h-40" style="display: none;"></div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between mt-2">
+                    <button id="find-route-button" class="flex-1 bg-primary-500 hover:bg-primary-600 text-white font-semibold py-2 px-4 rounded-md text-sm transition duration-150 flex items-center justify-center">
+                        <i class="fas fa-directions mr-1.5"></i> Tìm đường
+                    </button>
+                    <button id="close-route-inputs-btn" aria-label="Đóng tìm đường" class="ml-2 w-8 h-8 flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-100 hover:text-red-500 transition-all z-10">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="map-area"> <div id="map"></div>
+
+                <div class="map-controls-container absolute top-3 right-3 md:top-4 md:right-4 z-[1000] flex-col gap-2 hidden md:flex">
+                    <button id="locate-btn" class="map-action-button" title="Định vị của tôi">
+                        <i class="fas fa-location-arrow"></i>
+                    </button>
+                    <button id="map-layers-desktop" class="map-action-button" title="Tìm kiếm">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button id="show-tutorial-button" class="map-action-button" title="Xem hướng dẫn">
+                        <i class="fas fa-question-circle"></i>
+                    </button>
+                </div>
+                <div class="zoom-controls-desktop hidden md:flex flex-col bg-white rounded-full shadow-md overflow-hidden z-[1001]"><button class="zoom-in map-action-button text-gray-700 hover:bg-gray-100 p-2.5 border-b border-gray-200" title="Phóng to"><i class="fas fa-plus"></i></button><button class="zoom-out map-action-button text-gray-700 hover:bg-gray-100 p-2.5" title="Thu nhỏ"><i class="fas fa-minus"></i></button></div>
+                
+                <div id="info-panel" class="poi-panel absolute bottom-0 left-0 right-0 md:left-0 md:top-0 md:bottom-auto md:right-auto md:w-80 lg:w-96 bg-white shadow-lg rounded-t-lg md:rounded-none md:rounded-r-lg p-3 sm:p-4 z-[1001] max-h-[60vh] md:max-h-[calc(100%-2rem)] overflow-y-auto transform translate-y-full md:-translate-x-full transition-transform duration-300 ease-in-out" style="display: none;">
+                    <div class="poi-panel-content">
+                        <button id="close-poi-panel-btn" class="absolute top-2 right-2 bg-red-500 !bg-red-500 hover:bg-red-600 text-white p-2 z-10 rounded">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="route-instructions-panel" class="absolute bottom-0 left-0 right-0 md:left-0 md:top-0 md:bottom-auto md:right-auto md:w-80 lg:w-96 bg-white shadow-lg rounded-t-lg md:rounded-none md:rounded-r-lg p-3 sm:p-4 z-[1002] max-h-[60vh] md:max-h-[calc(100%-2rem)] overflow-y-auto transform translate-y-full md:-translate-x-full transition-transform duration-300 ease-in-out" style="display: none;">
+                    <div id="route-instructions-content"></div>
+                    <button class="close-route-panel-btn">
+                        <i class="fas fa-times mr-1"></i> Đóng
+                    </button>
+                </div>
+            </div>
+
+            <div class="floating-action-buttons md:hidden absolute bottom-4 right-4 z-[1000] flex flex-col gap-3">
+                <button id="fab-search" class="fab bg-white hover:bg-gray-100 text-gray-700" title="Tìm kiếm">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button id="fab-directions" class="fab bg-white hover:bg-gray-100 text-green-600" title="Tìm đường">
+                    <i class="fas fa-route"></i>
+                </button>
+                <button id="fab-locate" class="fab bg-white hover:bg-gray-100 text-blue-600" title="Định vị của tôi">
+                    <i class="fas fa-location-arrow"></i>
+                </button>
+                <button id="fab-tutorial" class="fab bg-white hover:bg-gray-100 text-yellow-500" title="Hướng dẫn sử dụng">
+                    <i class="fas fa-question-circle"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    
+    <audio id="poi-audio-player" style="display:none;"></audio>
+
+    <div id="popup-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-[1040]" style="display: none;"></div>
+
+    <div id="tutorial-popup" class="custom-popup fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-4 sm:p-6 rounded-lg shadow-xl z-[1050] w-[90vw] max-w-md max-h-[85vh] overflow-y-auto" style="display: none;">
+        <button id="tutorial-close-btn" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-2" aria-label="Đóng hướng dẫn">
+            <i class="fas fa-times text-lg"></i>
+        </button>
+        <h4 id="tutorial-title" class="text-md sm:text-lg font-semibold mb-3 text-primary-600 text-center">Hướng dẫn sử dụng bản đồ</h4>
+        <div class="tutorial-content space-y-2.5 text-xs sm:text-sm text-gray-700">
+            <p id="tutorial-text-search" class="flex items-center"><span class="icon-example mr-2 bg-gray-200 p-1 rounded"><i class="fas fa-search text-primary-500"></i></span> Sử dụng ô tìm kiếm để tìm địa điểm.</p>
+            <p id="tutorial-text-directions" class="flex items-center"><span class="icon-example mr-2 bg-gray-200 p-1 rounded"><i class="fas fa-route text-primary-500"></i></span> Nhấn biểu tượng chỉ đường để nhập điểm và tìm lộ trình.</p>
+            <p id="tutorial-text-location" class="flex items-center"><span class="icon-example mr-2 bg-gray-200 p-1 rounded"><i class="fas fa-location-arrow text-primary-500"></i></span> Nhấn để xem vị trí hiện tại của bạn.</p>
+            <p id="tutorial-text-audio" class="flex items-center"><span class="icon-example mr-2 bg-gray-200 p-1 rounded"><i class="fas fa-play text-yellow-500"></i></span> Nhấn nút "Thuyết minh" (nếu có) để nghe giới thiệu.</p>
+        </div>
+        <div class="language-switcher mt-4 pt-3 border-t border-gray-200 text-center">
+            <span id="language-switcher-label" class="text-xs text-gray-600 mr-2">Ngôn ngữ:</span>
+            <button id="lang-vi" class="lang-btn text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-100">Tiếng Việt</button>
+            <button id="lang-en" class="lang-btn text-xs px-2 py-1 rounded border border-gray-300 hover:bg-gray-100">English</button>
+        </div>
+    </div>
+
+    <div id="descent-choice-popup" class="custom-popup fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-4 sm:p-6 rounded-lg shadow-xl z-[1050] w-[90vw] max-w-sm" style="display: none;">
+        <h4 id="descent-choice-title" class="text-md sm:text-lg font-semibold mb-3 text-primary-600 text-center">Chọn phương tiện xuống núi</h4>
+        <div class="flex flex-col gap-3">
+            <button id="choice-cable-car" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md text-center transition duration-150 text-sm flex items-center justify-center gap-2">
+                <i class="fas fa-tram"></i> <span class="descent-choice-cable-text">Cáp treo</span>
+            </button>
+            <button id="choice-alpine-coaster" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md text-center transition duration-150 text-sm flex items-center justify-center gap-2">
+                <i class="fas fa-sleigh"></i> <span class="descent-choice-coaster-text">Máng trượt</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.81.0/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+
+    <script src="../../js/map.js"></script>
+    <script src="../../js/main.js"></script>
+    <script>
+        // Toggle top-bar visibility
+        function toggleTopBar() {
+            const topBar = document.querySelector('.top-bar');
+            const routeInputs = document.getElementById('route-inputs');
+            
+            if (topBar.classList.contains('hidden')) {
+                topBar.classList.remove('hidden');
+                if (routeInputs) routeInputs.style.display = 'none';
+            } else {
+                topBar.classList.add('hidden');
+            }
+        }
+
+        // Add event listeners
+        document.getElementById('map-layers-desktop').addEventListener('click', function() {
+            const searchInput = document.getElementById('search-input-main');
+            const topBar = document.querySelector('.top-bar');
+            const routeInputsContainer = document.getElementById('route-inputs');
+            if (topBar) {
+                topBar.classList.remove('hidden');
+                topBar.style.display = '';
+            }
+            if (routeInputsContainer) {
+                routeInputsContainer.style.display = 'none';
+            }
+            if (searchInput) {
+                searchInput.focus();
+            }
+        });
+
+        // Đóng route instructions panel khi click ra ngoài
+        document.addEventListener('mousedown', function(event) {
+            const panel = document.getElementById('route-instructions-panel');
+            if (panel && panel.style.display !== 'none' && !panel.contains(event.target)) {
+                panel.style.display = 'none';
+            }
+        });
+
+        // Nút cuộn filter-categories
+        const filterCategories = document.querySelector('.filter-categories');
+        const btnLeft = document.getElementById('filter-scroll-left');
+        const btnRight = document.getElementById('filter-scroll-right');
+        function updateArrowButtons() {
+            if (!filterCategories) return;
+            // Luôn hiển thị nút phải nếu có thể cuộn ngang
+            const canScroll = filterCategories.scrollWidth > filterCategories.clientWidth + 5;
+            btnLeft.style.display = filterCategories.scrollLeft > 0 ? 'flex' : 'none';
+            btnRight.style.display = canScroll ? 'flex' : 'none';
+        }
+        if (btnLeft && btnRight && filterCategories) {
+            btnLeft.addEventListener('click', () => {
+                filterCategories.scrollBy({ left: -150, behavior: 'smooth' });
+            });
+            btnRight.addEventListener('click', () => {
+                filterCategories.scrollBy({ left: 150, behavior: 'smooth' });
+            });
+            filterCategories.addEventListener('scroll', updateArrowButtons);
+            window.addEventListener('resize', updateArrowButtons);
+            setTimeout(updateArrowButtons, 500);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+/* css/guide.css */
+
+/* Cho mobile-description-truncate */
+@media (max-width: 767px) { /* Dưới breakpoint 'md' của Tailwind */
+    .mobile-description-truncate {
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* Giới hạn 2 dòng */
+        line-clamp: 2; /* ADDED: Standard property */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-height: 2.8em; /* (line-height * số dòng) - điều chỉnh nếu font-size/line-height khác */
+    }
+
+    .mobile-address-truncate {
+        display: -webkit-box;
+        -webkit-line-clamp: 1; /* Giới hạn 1 dòng cho địa chỉ */
+        line-clamp: 1; /* ADDED: Standard property */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .mobile-hideable {
+        display: none !important; /* Quan trọng để ghi đè Tailwind nếu cần */
+    }
+    
+    /* Điều chỉnh cụ thể hơn cho nội dung hoạt động của tour nếu cần */
+    .tour-card .tour-activities-content {
+         /* display: none; */ /* Nếu muốn ẩn hoàn toàn nội dung hoạt động */
+    }
+}
+
+/* Đảm bảo các icon căn chỉnh tốt */
+.fa-map-marker-alt, .fa-phone, .fa-tags, .fa-store {
+    width: 1em; /* Giúp icon chiếm không gian đồng đều */
+    text-align: center; /* Căn giữa icon nếu cần */
+}
+
+/* Bổ sung CSS cho card để đảm bảo chiều cao đồng đều nếu dùng grid layout */
+/* Chỉ áp dụng nếu bạn thấy các card có chiều cao không đều nhau */
+/* 
+.guide-grid .tour-card,
+.guide-grid .accommodation-card,
+.guide-grid .restaurant-card,
+.guide-grid .specialty-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.guide-grid .tour-card > div,
+.guide-grid .accommodation-card > div,
+.guide-grid .restaurant-card > div,
+.guide-grid .specialty-card > div {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.guide-grid .tour-card > div > p:first-of-type,
+.guide-grid .accommodation-card > div > div:has(+a), 
+.guide-grid .restaurant-card > div > div:has(+a),
+.guide-grid .specialty-card > div > p:first-of-type {
+    flex-grow: 1;
+}
+*/
+
+/* Các quy tắc trống sau đây đã được xóa vì chúng không có nội dung:
+.pagination-controls {}
+.pagination-controls .pagination-btn {}
+.pagination-controls .current-page-btn {}
+*/ 
