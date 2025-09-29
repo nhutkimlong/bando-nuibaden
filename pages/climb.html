@@ -427,76 +427,83 @@
                 </div>
             </section>
 
-            <section id="certification" class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
-                                   <h2 class="text-2xl md:text-3xl font-semibold mb-6 text-blue-700 border-b border-blue-200 pb-4 flex items-center">
-                     <i class="fa-solid fa-award text-3xl text-blue-600 mr-4"></i>
-                      Nhận Chứng nhận
-                  </h2>
-                 
-                 <!-- Thông tin về thời gian và chứng nhận -->
-                 <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
-                     <div class="flex items-start">
-                         <i class="fas fa-clock text-blue-600 mt-1 mr-3"></i>
-                         <div class="text-sm text-blue-800">
-                             <p class="font-semibold mb-2">⏱️ Thông tin thời gian leo núi:</p>
-                             <ul class="list-disc list-inside space-y-1 text-xs">
-                                 <li><strong>Thời gian leo:</strong> Được tính từ lúc bắt đầu leo đến lúc xác nhận vị trí trên đỉnh</li>
-                                 <li><strong>Ghi nhận tự động:</strong> Hệ thống sẽ ghi nhận thời gian thực khi bạn ấn "Xác thực"</li>
-                                 <li><strong>Hiển thị trên chứng nhận:</strong> Thời gian leo sẽ được in trên chứng nhận</li>
-                                 <li><strong>Yêu cầu:</strong> Phải xác thực vị trí tại đỉnh núi (986m) để nhận chứng nhận</li>
-                             </ul>
-                         </div>
-                     </div>
-                 </div>
+            <!-- Section nhận chứng nhận đã tạm ngưng -->
+            <section id="certification" class="bg-gray-50 p-6 md:p-8 rounded-lg shadow-lg border border-gray-200">
+                <div class="text-center py-12">
+                    <div class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fa-solid fa-pause text-3xl text-orange-600"></i>
+                    </div>
+                    <h2 class="text-2xl md:text-3xl font-semibold mb-4 text-gray-700">
+                        <i class="fa-solid fa-award text-3xl text-orange-600 mr-3"></i>
+                        Nhận Chứng nhận - Tạm ngưng
+                    </h2>
+                </div>
 
-                 <div id="phoneVerificationArea">
-                     <div class="mb-4 relative">
-                         <label for="verifyPhoneNumber" class="block text-sm font-medium text-gray-700 mb-1">Nhập Số điện thoại đã đăng ký <span class="text-red-500">*</span></label>
-                         <div class="flex items-center border border-gray-300 rounded-md shadow-sm focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
-                             <span class="pl-3 pr-2 text-gray-400"><i class="fa-solid fa-mobile-screen-button"></i></span>
-                             <input type="tel" id="verifyPhoneNumber" name="verifyPhoneNumber" required pattern="[0-9]{10,11}" title="Nhập số điện thoại đã dùng để đăng ký" class="w-full py-2 border-0 rounded-r-md focus:ring-0 focus:outline-none text-sm" placeholder="Nhập lại SĐT đã đăng ký">
-                         </div>
-                     </div>
-                     <div class="pt-2 flex flex-col sm:flex-row gap-3">
-                         <button type="button" id="verifyPhoneBtn" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out flex items-center justify-center text-lg shadow hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed">
-                             <i class="fa-solid fa-location-crosshairs mr-2"></i>
-                             <span>Xác thực</span> 
-                             <div id="certSpinner" class="spinner hidden"></div>
-                         </button>
+                <!-- Nội dung gốc được ẩn để có thể khôi phục sau -->
+                <div id="originalCertificationContent" class="hidden">
+                    <!-- Thông tin về thời gian và chứng nhận -->
+                    <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-clock text-blue-600 mt-1 mr-3"></i>
+                            <div class="text-sm text-blue-800">
+                                <p class="font-semibold mb-2">⏱️ Thông tin thời gian leo núi:</p>
+                                <ul class="list-disc list-inside space-y-1 text-xs">
+                                    <li><strong>Thời gian leo:</strong> Được tính từ lúc bắt đầu leo đến lúc xác nhận vị trí trên đỉnh</li>
+                                    <li><strong>Ghi nhận tự động:</strong> Hệ thống sẽ ghi nhận thời gian thực khi bạn ấn "Xác thực"</li>
+                                    <li><strong>Hiển thị trên chứng nhận:</strong> Thời gian leo sẽ được in trên chứng nhận</li>
+                                    <li><strong>Yêu cầu:</strong> Phải xác thực vị trí tại đỉnh núi (986m) để nhận chứng nhận</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
 
-                     </div>
-                 </div>
+                    <div id="phoneVerificationArea">
+                        <div class="mb-4 relative">
+                            <label for="verifyPhoneNumber" class="block text-sm font-medium text-gray-700 mb-1">Nhập Số điện thoại đã đăng ký <span class="text-red-500">*</span></label>
+                            <div class="flex items-center border border-gray-300 rounded-md shadow-sm focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
+                                <span class="pl-3 pr-2 text-gray-400"><i class="fa-solid fa-mobile-screen-button"></i></span>
+                                <input type="tel" id="verifyPhoneNumber" name="verifyPhoneNumber" required pattern="[0-9]{10,11}" title="Nhập số điện thoại đã dùng để đăng ký" class="w-full py-2 border-0 rounded-r-md focus:ring-0 focus:outline-none text-sm" placeholder="Nhập lại SĐT đã đăng ký">
+                            </div>
+                        </div>
+                        <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                            <button type="button" id="verifyPhoneBtn" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out flex items-center justify-center text-lg shadow hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-location-crosshairs mr-2"></i>
+                                <span>Xác thực</span> 
+                                <div id="certSpinner" class="spinner hidden"></div>
+                            </button>
+                        </div>
+                    </div>
 
-                 <div id="memberSelectionArea" class="mt-8 hidden border border-gray-200 rounded-lg p-4 md:p-6 bg-gray-50/50">
-                     <h3 class="text-lg md:text-xl font-semibold text-gray-800 mb-3">Chọn thành viên & Tải ảnh (tùy chọn)</h3>
-                     <p class="text-sm text-gray-600 mb-5">Đánh dấu chọn thành viên muốn nhận chứng nhận. Nhấn "Tải ảnh" để thêm hình ảnh cá nhân lên chứng nhận (bỏ qua nếu không muốn).</p>
+                    <div id="memberSelectionArea" class="mt-8 hidden border border-gray-200 rounded-lg p-4 md:p-6 bg-gray-50/50">
+                        <h3 class="text-lg md:text-xl font-semibold text-gray-800 mb-3">Chọn thành viên & Tải ảnh (tùy chọn)</h3>
+                        <p class="text-sm text-gray-600 mb-5">Đánh dấu chọn thành viên muốn nhận chứng nhận. Nhấn "Tải ảnh" để thêm hình ảnh cá nhân lên chứng nhận (bỏ qua nếu không muốn).</p>
 
-                     <div id="memberListContainer" class="space-y-4 mb-6 max-h-96 overflow-y-auto border-t border-b border-gray-200 py-4">
-                     </div>
+                        <div id="memberListContainer" class="space-y-4 mb-6 max-h-96 overflow-y-auto border-t border-b border-gray-200 py-4">
+                        </div>
 
-                     <div class="flex flex-col sm:flex-row items-center gap-4 pt-4 border-t border-gray-200">
-                         <button type="button" id="generateSelectedBtn" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out flex items-center justify-center text-base shadow hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed">
-                             <i class="fa-solid fa-file-pdf mr-2"></i>
-                             <span>Tạo Chứng nhận</span> 
-                             <div id="generateSpinner" class="spinner hidden"></div>
-                         </button>
-                         <button type="button" id="resetVerificationBtn" class="w-full sm:w-auto text-sm text-gray-500 hover:text-gray-700 hover:underline">
-                            <i class="fa-solid fa-arrow-left mr-1"></i> Nhập SĐT khác 
-                        </button>
-                     </div>
-                 </div>
+                        <div class="flex flex-col sm:flex-row items-center gap-4 pt-4 border-t border-gray-200">
+                            <button type="button" id="generateSelectedBtn" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out flex items-center justify-center text-base shadow hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed">
+                                <i class="fa-solid fa-file-pdf mr-2"></i>
+                                <span>Tạo Chứng nhận</span> 
+                                <div id="generateSpinner" class="spinner hidden"></div>
+                            </button>
+                            <button type="button" id="resetVerificationBtn" class="w-full sm:w-auto text-sm text-gray-500 hover:text-gray-700 hover:underline">
+                               <i class="fa-solid fa-arrow-left mr-1"></i> Nhập SĐT khác 
+                           </button>
+                        </div>
+                    </div>
 
-                 <div id="certificateResult" class="mt-8 hidden bg-green-50 p-6 rounded-lg border border-green-300 shadow-sm transition-all duration-500 ease-out">
-                     <h3 id="certificateResultTitle" class="text-xl font-semibold text-green-800 mb-3 flex items-center">
-                         <i class="fa-solid fa-circle-check text-green-600 mr-2"></i>
-                         <span></span>
-                    </h3>
-                     <p id="certificateResultMessage" class="mb-4 text-green-700"></p>
-                     <ul id="downloadLinks" class="space-y-3">
-                     </ul>
-                 </div>
-
-             </section>
+                    <div id="certificateResult" class="mt-8 hidden bg-green-50 p-6 rounded-lg border border-green-300 shadow-sm transition-all duration-500 ease-out">
+                        <h3 id="certificateResultTitle" class="text-xl font-semibold text-green-800 mb-3 flex items-center">
+                            <i class="fa-solid fa-circle-check text-green-600 mr-2"></i>
+                            <span></span>
+                       </h3>
+                        <p id="certificateResultMessage" class="mb-4 text-green-700"></p>
+                        <ul id="downloadLinks" class="space-y-3">
+                        </ul>
+                    </div>
+                </div>
+            </section>
 
         </main>
 
@@ -936,6 +943,70 @@
                     });
                 }, { once: true });
             });
+        });
+    </script>
+
+    <!-- Script xử lý nội dung tạm ngưng chứng nhận -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // Hàm khôi phục chức năng chứng nhận (để sử dụng sau)
+            window.restoreCertificationFunction = function() {
+                const originalContent = document.getElementById('originalCertificationContent');
+                const suspendedContent = document.querySelector('#certification > div.text-center');
+                const section = document.getElementById('certification');
+                
+                if (originalContent && suspendedContent && section) {
+                    // Ẩn nội dung tạm ngưng
+                    suspendedContent.style.display = 'none';
+                    
+                    // Thay đổi background của section
+                    section.className = 'bg-white p-6 md:p-8 rounded-lg shadow-lg';
+                    
+                    // Tạo lại tiêu đề chính
+                    let mainTitle = section.querySelector('h2');
+                    if (!mainTitle) {
+                        mainTitle = document.createElement('h2');
+                        section.insertBefore(mainTitle, originalContent);
+                    }
+                    mainTitle.innerHTML = '<i class="fa-solid fa-award text-3xl text-blue-600 mr-4"></i>Nhận Chứng nhận';
+                    mainTitle.className = 'text-2xl md:text-3xl font-semibold mb-6 text-blue-700 border-b border-blue-200 pb-4 flex items-center';
+                    
+                    // Hiển thị nội dung gốc
+                    originalContent.classList.remove('hidden');
+                    
+                    console.log('Chức năng nhận chứng nhận đã được khôi phục');
+                }
+            };
+
+            // Hàm tạm ngưng chức năng chứng nhận (để sử dụng sau)
+            window.suspendCertificationFunction = function() {
+                const originalContent = document.getElementById('originalCertificationContent');
+                const suspendedContent = document.querySelector('#certification > div.text-center');
+                const section = document.getElementById('certification');
+                
+                if (originalContent && suspendedContent && section) {
+                    // Ẩn nội dung gốc
+                    originalContent.classList.add('hidden');
+                    
+                    // Hiển thị nội dung tạm ngưng
+                    suspendedContent.style.display = 'block';
+                    
+                    // Thay đổi background của section
+                    section.className = 'bg-gray-50 p-6 md:p-8 rounded-lg shadow-lg border border-gray-200';
+                    
+                    // Thay đổi tiêu đề section
+                    let sectionTitle = section.querySelector('h2');
+                    if (!sectionTitle) {
+                        sectionTitle = document.createElement('h2');
+                        suspendedContent.insertBefore(sectionTitle, suspendedContent.firstChild);
+                    }
+                    sectionTitle.innerHTML = '<i class="fa-solid fa-award text-3xl text-orange-600 mr-3"></i>Nhận Chứng nhận - Tạm ngưng';
+                    sectionTitle.className = 'text-2xl md:text-3xl font-semibold mb-4 text-gray-700';
+                    
+                    console.log('Chức năng nhận chứng nhận đã được tạm ngưng');
+                }
+            };
         });
     </script>
 </body>
