@@ -352,8 +352,8 @@ function handleGenerateCertificatesWithPhotos(requestData) {
                     Logger.log(`Success: PDF for ${memberName} (${pdfLinks.length}/${selectedMembers.length})`);
                 } else { throw new Error(`createCert returned null for ${memberName}`); }
             } catch (certError) {
-                Logger.log(`!!! ERROR creating PDF for "${memberName}": ${certError}`);
-                errors.push(`Lỗi tạo PDF cho ${memberName}.`);
+                Logger.log(`!!! ERROR creating PDF for "${memberName}": ${certError.message || certError}\nStack: ${certError.stack || ''}`);
+                errors.push(`Lỗi tạo PDF cho ${memberName}: ${certError.message || certError}`);
             }
         });
         
@@ -372,12 +372,13 @@ function handleGenerateCertificatesWithPhotos(requestData) {
     statusMsg += ` in ${totalTime}s`;
 
     try {
+        _columnCache = null; // Reset cache để đảm bảo lấy đúng indices
         const cols = getCachedColumnIndices(sheet);
         if(cols) {
             if (cols[COL_STATUS]) sheet.getRange(rowIndex, cols[COL_STATUS]).setValue(statusMsg);
             if (cols[COL_CERT_LINKS]) sheet.getRange(rowIndex, cols[COL_CERT_LINKS]).setValue(pdfLinks.length > 0 ? JSON.stringify(pdfLinks) : '');
             SpreadsheetApp.flush();
-            Logger.log(`Updated Sheet: Row ${rowIndex}, Status=${statusMsg}`);
+            Logger.log(`Updated Sheet: Row ${rowIndex}, Status=${statusMsg}, Links=${pdfLinks.length}`);
         }
     } catch (e) { Logger.log(`!!! Error updating sheet row ${rowIndex}: ${e}`); }
 
@@ -414,7 +415,7 @@ function handleGenerateCertificatesWithPhotos(requestData) {
     if (emailSent) userRespMsg += " 📧 Email đã gửi.";
 
     return createJsonResponse({ 
-        success: overallSuccess && errors.length === 0, 
+        success: overallSuccess, 
         message: userRespMsg, 
         pdfLinks: pdfLinks,
         stats: {
@@ -483,54 +484,43 @@ function createCertificate(name, dateString, timeString, durationString, photoBa
     tempCopyFile = templateFile.makeCopy(tempCopyName, destinationFolder);
     copyDoc = DocumentApp.openById(tempCopyFile.getId());
 
+    // Lấy body một lần duy nhất
+    const body = copyDoc.getBody();
+
     // Thay thế hình ảnh nếu có dữ liệu Base64
     let imageReplaced = false;
     if (photoBase64 && photoBase64.startsWith('data:image')) {
-      // Giải mã Base64 thành Blob
       const base64Data = photoBase64.split(',')[1];
       const contentType = photoBase64.split(';')[0].split(':')[1];
       const decodedBytes = Utilities.base64Decode(base64Data);
       const blob = Utilities.newBlob(decodedBytes, contentType, `${name}_photo`);
 
-      // Lấy body của tài liệu
-      const body = copyDoc.getBody();
       const inlineImages = body.getImages();
-
-      // Tìm và thay thế INLINE_IMAGE
       for (let i = 0; i < inlineImages.length; i++) {
         const img = inlineImages[i];
-        const altDesc = img.getAltDescription();
-        if (altDesc === placeholderAltText) {
+        if (img.getAltDescription() === placeholderAltText) {
           const parent = img.getParent();
           const indexInParent = parent.getChildIndex(img);
-          const placeholderWidth = img.getWidth();
-          const placeholderHeight = img.getHeight();
-          // Chèn ảnh mới và xóa ảnh cũ
           const newImage = parent.insertInlineImage(indexInParent, blob);
-          newImage.setWidth(placeholderWidth);
-          newImage.setHeight(placeholderHeight);
+          newImage.setWidth(img.getWidth());
+          newImage.setHeight(img.getHeight());
           img.removeFromParent();
           imageReplaced = true;
           break;
         }
       }
-
-      if (!imageReplaced) {
-        Logger.log(`Không tìm thấy placeholder "${placeholderAltText}" trong tài liệu.`);
-      }
+      if (!imageReplaced) Logger.log(`Không tìm thấy placeholder "${placeholderAltText}" trong tài liệu.`);
     } else {
       Logger.log(`Không có ảnh hoặc định dạng Base64 không hợp lệ.`);
     }
 
     // Thay thế văn bản
-    const body = copyDoc.getBody();
     body.replaceText('{{FullName}}', name || 'N/A');
     body.replaceText('{{Date}}', dateString || 'N/A');
     // New placeholders for climb time
     body.replaceText('{{ClimbTime}}', timeString || 'N/A');
     body.replaceText('{{Time}}', timeString || 'N/A');
     body.replaceText('{{DateTime}}', (dateString && timeString) ? `${dateString} ${timeString}` : (dateString || 'N/A'));
-    // Duration placeholders
     body.replaceText('{{Duration}}', durationString || '');
     body.replaceText('{{ElapsedTime}}', durationString || '');
 
@@ -539,11 +529,17 @@ function createCertificate(name, dateString, timeString, durationString, photoBa
     copyDoc = null;
     const pdfBlob = tempCopyFile.getAs(MimeType.PDF).setName(outputFileNameBase + '.pdf');
     const pdfFile = destinationFolder.createFile(pdfBlob);
-    pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    return pdfFile.getUrl();
+    try {
+      pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (shareErr) {
+      Logger.log(`WARN: setSharing failed for ${outputFileNameBase}: ${shareErr}`);
+    }
+    const fileUrl = pdfFile.getUrl();
+    Logger.log(`PDF created successfully: ${fileUrl}`);
+    return fileUrl;
 
   } catch (error) {
-    Logger.log(`Lỗi khi tạo chứng chỉ: ${error}`);
+    Logger.log(`Lỗi khi tạo chứng chỉ cho "${name}": ${error.message || error}\nStack: ${error.stack || ''}`);
     return null;
   } finally {
     if (copyDoc) {

@@ -1197,17 +1197,16 @@ async function handleGenerateSelectedCertificates() {
         });
         const result = await response.json();
 
-        if (result.success) {
+        if (result.success || (result.pdfLinks && result.pdfLinks.length > 0)) {
             hideMessage();
-            let resultMessage = `Hoàn tất! Đã tạo ${result.pdfLinks?.length || 0} chứng nhận.`;
-             if (result.message && result.message.toLowerCase().includes('lỗi')) resultMessage = result.message;
+            let resultMessage = result.message || `Hoàn tất! Đã tạo ${result.pdfLinks?.length || 0} chứng nhận.`;
             showMessage(resultMessage, (result.pdfLinks?.length > 0) ? 'success' : 'info', 15000);
 
-            if(result.pdfLinks && result.pdfLinks.length > 0) {
+            if (result.pdfLinks && result.pdfLinks.length > 0) {
                 displayDownloadLinks(result.pdfLinks);
             } else {
-                 displayDownloadLinks([]);
-                 if(certificateResultMessage) certificateResultMessage.textContent = result.message || 'Không có chứng nhận nào được tạo thành công.';
+                displayDownloadLinks([]);
+                if (certificateResultMessage) certificateResultMessage.textContent = result.message || 'Không có chứng nhận nào được tạo thành công.';
             }
         } else {
              throw new Error(result.message || `Không thể tạo chứng nhận.`);
