@@ -18,33 +18,67 @@
 [functions.environment]
   NODE_ENV = "production"
 
-# Functions are automatically accessible at /.netlify/functions/
-# No redirect needed for functions
+# ------------------------------------------------------------------------------
+# REDIRECTS (QUY TẮC ĐỊNH TUYẾN)
+# ------------------------------------------------------------------------------
 
-# Redirect /pages/climb.html to climb page
+# 1. Gộp các quy tắc chuyển hướng 301 từ file _redirects cũ sang netlify.toml
 [[redirects]]
-  from = "/pages/climb.html"
+  from = "/pages/map/index.html"
+  to = "/pages/map.html"
+  status = 301
+
+[[redirects]]
+  from = "/pages/guide/index.html"
+  to = "/pages/guide.html"
+  status = 301
+
+[[redirects]]
+  from = "/pages/climb/index.html"
   to = "/pages/climb.html"
-  status = 200
+  status = 301
 
-# Redirect other /pages/ to home page
 [[redirects]]
-  from = "/pages/"
-  to = "/home.html"
-  status = 302
+  from = "/pages/admin/index.html"
+  to = "/pages/admin.html"
+  status = 301
 
-# Admin protection - redirect admin.html to login if not authenticated
+[[redirects]]
+  from = "/index.html"
+  to = "/home.html"
+  status = 301
+
+# 2. Logic bảo vệ trang Admin:
+# Nếu người dùng có vai trò (Role) là "admin" -> cho phép truy cập trực tiếp (Mã 200)
+[[redirects]]
+  from = "/pages/admin.html"
+  to = "/pages/admin.html"
+  status = 200
+  conditions = {Role = ["admin"]}
+  force = true
+
+# Nếu người dùng KHÔNG có vai trò "admin" hoặc chưa đăng nhập -> chuyển hướng về login (Mã 302)
 [[redirects]]
   from = "/pages/admin.html"
   to = "/pages/admin-login.html"
   status = 302
-  conditions = {Role = ["admin"]}
+  force = true
 
-# Catch-all redirect for SPA (must come AFTER functions redirect)
+# 3. Chuyển hướng các đường dẫn /pages/* khác không tồn tại về /home.html (Mã 302)
+[[redirects]]
+  from = "/pages/*"
+  to = "/home.html"
+  status = 302
+
+# 4. Catch-all cho SPA (Single Page Application) - Đặt ở cuối cùng (Mã 200)
 [[redirects]]
   from = "/*"
   to = "/home.html"
   status = 200
+
+# ------------------------------------------------------------------------------
+# HEADERS & CACHE-CONTROL CONFIGURATION
+# ------------------------------------------------------------------------------
 
 [[headers]]
   for = "/*"
@@ -63,7 +97,7 @@
 [[headers]]
   for = "/js/*"
   [headers.values]
-    Cache-Control = "public, max-age=300"
+    Cache-Control = "public, max-age=31536000, immutable"
     Content-Type = "application/javascript"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
@@ -75,7 +109,7 @@
 [[headers]]
   for = "/css/*"
   [headers.values]
-    Cache-Control = "public, max-age=300"
+    Cache-Control = "public, max-age=31536000, immutable"
     Content-Type = "text/css"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
@@ -87,7 +121,7 @@
 [[headers]]
   for = "/assets/*"
   [headers.values]
-    Cache-Control = "public, max-age=604800"
+    Cache-Control = "public, max-age=31536000, immutable"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
@@ -98,7 +132,7 @@
 [[headers]]
   for = "/*.html"
   [headers.values]
-    Cache-Control = "public, max-age=300"
+    Cache-Control = "public, max-age=86400, must-revalidate"
     Content-Type = "text/html; charset=utf-8"
     Brotli-Compression = "true"
     Gzip-Compression = "true"
@@ -113,19 +147,16 @@
 [[headers]]
   for = "/*.{jpg,jpeg,png,gif,webp,svg}"
   [headers.values]
-    Cache-Control = "public, max-age=604800"
+    Cache-Control = "public, max-age=31536000, immutable"
     Brotli-Compression = "true"
     Gzip-Compression = "true"
 
 [[headers]]
   for = "/*.{woff,woff2,ttf,otf,eot}"
   [headers.values]
-    Cache-Control = "public, max-age=604800"
+    Cache-Control = "public, max-age=31536000, immutable"
     Brotli-Compression = "true"
     Gzip-Compression = "true"
-
-# Error pages (Netlify will automatically use these for 404, 403, 500 errors)
-# No need for explicit redirects - Netlify automatically serves 404.html for 404 errors
 
 [[headers]]
   for = "/robots.txt"
@@ -137,4 +168,4 @@
   for = "/sitemap.xml"
   [headers.values]
     Cache-Control = "public, max-age=3600"
-    Content-Type = "application/xml" 
+    Content-Type = "application/xml"

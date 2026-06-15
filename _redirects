@@ -1,11 +1,1 @@
-# Redirect old URLs to new URLs after restructuring
-/pages/map/index.html /pages/map.html 301
-/pages/guide/index.html /pages/guide.html 301
-/pages/climb/index.html /pages/climb.html 301
-/pages/admin/index.html /pages/admin.html 301
-
-# Root index redirect
-/index.html /home.html 301
-
-# Fallback for SPA routing
-# /* /home.html 200 
+# All redirects have been consolidated into netlify.toml to avoid duplicate parsing conflicts.
