@@ -94,10 +94,11 @@
     Vary = "Accept-Encoding"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
 
+# JS không dùng Content Hash (statically named) -> Cache có điều kiện (luôn kiểm tra lại ETag)
 [[headers]]
   for = "/js/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=0, must-revalidate"
     Content-Type = "application/javascript"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
@@ -106,10 +107,11 @@
     Brotli-Compression = "true"
     Gzip-Compression = "true"
 
+# CSS không dùng Content Hash (statically named) -> Cache có điều kiện (luôn kiểm tra lại ETag)
 [[headers]]
   for = "/css/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=0, must-revalidate"
     Content-Type = "text/css"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
@@ -118,6 +120,16 @@
     Brotli-Compression = "true"
     Gzip-Compression = "true"
 
+# Dữ liệu JSON (chứa thông tin hoạt động, POI, cấu hình...) -> Luôn cập nhật ngay khi Admin lưu
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Content-Type = "application/json; charset=utf-8"
+    Brotli-Compression = "true"
+    Gzip-Compression = "true"
+
+# Assets tĩnh hoàn toàn (Hình ảnh trong thư mục assets) -> Cache 1 năm
 [[headers]]
   for = "/assets/*"
   [headers.values]
@@ -129,10 +141,11 @@
     Brotli-Compression = "true"
     Gzip-Compression = "true"
 
+# Các file HTML tĩnh -> Cache có điều kiện (luôn revalidate để nhận thông báo mới)
 [[headers]]
   for = "/*.html"
   [headers.values]
-    Cache-Control = "public, max-age=86400, must-revalidate"
+    Cache-Control = "public, max-age=0, must-revalidate"
     Content-Type = "text/html; charset=utf-8"
     Brotli-Compression = "true"
     Gzip-Compression = "true"
@@ -144,6 +157,7 @@
     Brotli-Compression = "true"
     Gzip-Compression = "true"
 
+# Định dạng ảnh dùng chung -> Cache 1 năm
 [[headers]]
   for = "/*.{jpg,jpeg,png,gif,webp,svg}"
   [headers.values]
@@ -151,6 +165,7 @@
     Brotli-Compression = "true"
     Gzip-Compression = "true"
 
+# Fonts tĩnh -> Cache 1 năm
 [[headers]]
   for = "/*.{woff,woff2,ttf,otf,eot}"
   [headers.values]

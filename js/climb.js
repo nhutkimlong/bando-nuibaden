@@ -95,7 +95,11 @@ function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); return R * c;
 }
 function setLoadingState(button, spinner, isLoading) {
-    if (!button || !spinner) return; button.disabled = isLoading; spinner.classList.toggle('hidden', !isLoading);
+    if (!button) return;
+    button.disabled = isLoading;
+    if (spinner) {
+        spinner.classList.toggle('hidden', !isLoading);
+    }
 }
 
 // Hàm format ngày từ yyyy-mm-dd sang dd/mm/yyyy
@@ -398,8 +402,6 @@ async function handleRegistrationSubmit(event) {
         }
     }
     
-    
-    
     // Kiểm tra xem có yêu cầu GPS cho đăng ký không
     if (!GPS_SETTINGS.requireGpsRegistration) {
         // Nếu không yêu cầu GPS, tiếp tục với form data
@@ -427,11 +429,15 @@ async function handleRegistrationSubmit(event) {
         return;
     }
     
+    // Bật hiệu ứng loading và disable nút Đăng ký để tránh click nhiều lần
+    setLoadingState(registerBtn, registerSpinner, true);
+    
     // Kiểm tra vị trí trước khi cho phép đăng ký
     showMessage('Đang kiểm tra vị trí đăng ký...', 'info', 0);
 
     if (!navigator.geolocation) {
         showMessage('Trình duyệt không hỗ trợ định vị. Vui lòng sử dụng thiết bị khác.', 'error');
+        setLoadingState(registerBtn, registerSpinner, false);
         return;
     }
 
@@ -471,6 +477,7 @@ async function handleRegistrationSubmit(event) {
         } else if (!hasProcessedLocation) {
             navigator.geolocation.clearWatch(watchId);
             showMessage('Không thể xác định vị trí chính xác. Vui lòng kiểm tra quyền truy cập vị trí và thử lại.', 'error');
+            setLoadingState(registerBtn, registerSpinner, false);
         }
     }, LOCATION_TIMEOUT);
 }
@@ -480,6 +487,7 @@ function handleLocationCheckForRegistration(position) {
     // Kiểm tra position có hợp lệ không
     if (!position || !position.coords) {
         showMessage('Không thể xác định vị trí. Vui lòng thử lại.', 'error');
+        setLoadingState(registerBtn, registerSpinner, false);
         return;
     }
     
@@ -499,12 +507,14 @@ function handleLocationCheckForRegistration(position) {
         const climbTimeVal2 = String(formData.get('climbTime') || '');
         if (!isClimbDateTimeWithinGrace(climbDateVal2, climbTimeVal2, 30)) {
             showMessage('Ngày/giờ leo chỉ được sớm hơn tối đa 30 phút so với hiện tại.', 'error');
+            setLoadingState(registerBtn, registerSpinner, false);
             return;
         }
         // Validate names (leader + members) with basic length only
         const leaderNameVal = String(formData.get('leaderName') || '').trim();
         if (!leaderNameVal || leaderNameVal.length < 2 || leaderNameVal.length > 100) {
             showMessage('Họ và tên không hợp lệ.', 'error');
+            setLoadingState(registerBtn, registerSpinner, false);
             return;
         }
         const memberListRawCheck2 = (formData.get('memberList') || '').toString();
@@ -512,6 +522,7 @@ function handleLocationCheckForRegistration(position) {
         for (const name of memberListArrForCheck2) {
             if (!name || name.length < 2 || name.length > 100) {
                 showMessage('Danh sách thành viên chứa tên không hợp lệ.', 'error');
+                setLoadingState(registerBtn, registerSpinner, false);
                 return;
             }
         }
@@ -519,6 +530,7 @@ function handleLocationCheckForRegistration(position) {
         const nationalId = formData.get('cccd');
         if (!isValidNationalId(nationalId)) {
             showMessage('Số CMND/CCCD phải gồm 9 số hoặc 12 số bắt đầu bằng 0.', 'error');
+            setLoadingState(registerBtn, registerSpinner, false);
             return;
         }
         
@@ -548,9 +560,13 @@ function handleLocationCheckForRegistration(position) {
             memberList: formData.get('memberList').trim()
         };
 
-        setTimeout(() => showCommitmentModal(), 2000);
+        setTimeout(() => {
+            setLoadingState(registerBtn, registerSpinner, false);
+            showCommitmentModal();
+        }, 2000);
     } else {
         showMessage(`Vị trí không hợp lệ (cách ${distance.toFixed(0)}m). Vui lòng di chuyển đến đúng địa điểm đăng ký và thử lại.`, 'error', 10000);
+        setLoadingState(registerBtn, registerSpinner, false);
     }
 }
 
@@ -580,6 +596,7 @@ function handleLocationErrorForRegistration(error) {
     
     const fullMessage = detailedMsg ? `${errorMsg} ${detailedMsg}` : errorMsg;
     showMessage(fullMessage, 'error', 12000);
+    setLoadingState(registerBtn, registerSpinner, false);
 }
 
 
