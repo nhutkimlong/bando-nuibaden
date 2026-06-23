@@ -47,6 +47,7 @@ let cancelRepresentativeBtn, confirmRepresentativeBtn;
 let registrationLoadingModal, registrationSuccessModal, closeSuccessModalBtn, downloadTicketBtn;
 let ticketCode, ticketRegTime, ticketLeaderName, ticketPhone, ticketCCCD, ticketGroupSize, ticketClimbDateTime, ticketAddress, ticketMemberListContainer, ticketMemberList, ticketQRCode;
 let loadingModalTitle, loadingModalDesc, loadingModalDetails;
+let ticketImageOverlay, ticketResultImage, closeTicketImageOverlayBtn;
 
 // --- Trekking Route Data (Unchanged) ---
 const powerPoleTrailGeoJSON = { /* ... GeoJSON data ... */
@@ -825,13 +826,13 @@ function hideSuccessModal() {
     }
 }
 
-// Tải động thư viện html2canvas-pro
+// Tải động thư viện html2canvas-pro cục bộ
 function loadHtml2Canvas() {
     if (window.html2canvas) return Promise.resolve();
     return new Promise((resolve, reject) => {
-        console.log('Đang tải thư viện html2canvas-pro từ CDN...');
+        console.log('Đang tải thư viện html2canvas-pro cục bộ...');
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@latest/dist/html2canvas.min.js';
+        script.src = '../js/html2canvas-pro.min.js';
         script.onload = () => {
             console.log('Thư viện html2canvas đã tải xong.');
             resolve();
@@ -863,8 +864,20 @@ async function handleDownloadTicketImage() {
         // Đợi 400ms để đảm bảo mã QR Code từ API đã được hiển thị đầy đủ
         await new Promise(resolve => setTimeout(resolve, 400));
         
+        // Kiểm tra xem html2canvas đã được tải thành công và có hàm không
+        let html2canvasFn = window.html2canvas;
+        if (!html2canvasFn && typeof html2canvas !== 'undefined') {
+            html2canvasFn = html2canvas;
+        }
+        if (html2canvasFn && html2canvasFn.default) {
+            html2canvasFn = html2canvasFn.default;
+        }
+        if (typeof html2canvasFn !== 'function') {
+            throw new Error('Thư viện html2canvas không được tải đúng cách.');
+        }
+
         // Chụp ticketCard
-        const canvas = await html2canvas(ticketCard, {
+        const canvas = await html2canvasFn(ticketCard, {
             useCORS: true,
             allowTaint: true,
             scale: 3, // Độ phân giải cao sắc nét
@@ -873,16 +886,36 @@ async function handleDownloadTicketImage() {
         
         const imgData = canvas.toDataURL('image/png');
         
-        // Tạo link để tải xuống
-        const a = document.createElement('a');
-        const codeText = ticketCode ? ticketCode.textContent : 'Ve_Dang_Ky';
-        a.href = imgData;
-        a.download = `Ve_Leo_Nui_${codeText}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // Hiển thị kết quả ảnh lên thẻ <img> trong overlay
+        if (ticketResultImage) {
+            ticketResultImage.src = imgData;
+        }
         
-        showMessage('Đã tải ảnh vé thành công!', 'success', 4000);
+        // Kiểm tra xem có đang ở trình duyệt di động hay các WebView không (Zalo, iOS, Facebook)
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            // Trên di động: Hiển thị overlay hướng dẫn người dùng ấn giữ để lưu ảnh
+            if (ticketImageOverlay) {
+                ticketImageOverlay.classList.remove('hidden');
+            }
+            showMessage('Đã tạo ảnh vé! Hãy ấn giữ vào hình ảnh để lưu.', 'success', 5000);
+        } else {
+            // Trên máy tính: Tự động kích hoạt hành động tải xuống trực tiếp
+            const a = document.createElement('a');
+            const codeText = ticketCode ? ticketCode.textContent : 'Ve_Dang_Ky';
+            a.href = imgData;
+            a.download = `Ve_Leo_Nui_${codeText}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Đồng thời hiển thị overlay như một tùy chọn xem trước và hướng dẫn nếu tải về bị trình duyệt chặn
+            if (ticketImageOverlay) {
+                ticketImageOverlay.classList.remove('hidden');
+            }
+            showMessage('Đã tải ảnh vé thành công!', 'success', 4000);
+        }
     } catch (error) {
         console.error('Lỗi chụp ảnh vé:', error);
         showMessage('Không thể tải ảnh tự động. Vui lòng tự chụp lại màn hình điện thoại của bạn.', 'error', 8000);
@@ -1768,6 +1801,9 @@ function initializeDOMElements() {
     registrationSuccessModal = document.getElementById('registrationSuccessModal');
     downloadTicketBtn = document.getElementById('downloadTicketBtn');
     closeSuccessModalBtn = document.getElementById('closeSuccessModalBtn');
+    ticketImageOverlay = document.getElementById('ticketImageOverlay');
+    ticketResultImage = document.getElementById('ticketResultImage');
+    closeTicketImageOverlayBtn = document.getElementById('closeTicketImageOverlayBtn');
     ticketCode = document.getElementById('ticketCode');
     ticketRegTime = document.getElementById('ticketRegTime');
     ticketLeaderName = document.getElementById('ticketLeaderName');
@@ -1789,6 +1825,9 @@ function initializeDOMElements() {
     }
     if (registrationSuccessModal) {
         registrationSuccessModal.classList.add('hidden');
+    }
+    if (ticketImageOverlay) {
+        ticketImageOverlay.classList.add('hidden');
     }
 }
 
@@ -1897,6 +1936,16 @@ function setupEventListeners() {
     if (confirmCommitmentBtn) confirmCommitmentBtn.addEventListener('click', handleConfirmCommitment);
     if (closeSuccessModalBtn) closeSuccessModalBtn.addEventListener('click', hideSuccessModal);
     if (downloadTicketBtn) downloadTicketBtn.addEventListener('click', handleDownloadTicketImage);
+    if (closeTicketImageOverlayBtn) {
+        closeTicketImageOverlayBtn.addEventListener('click', () => {
+            if (ticketImageOverlay) ticketImageOverlay.classList.add('hidden');
+        });
+    }
+    if (ticketImageOverlay) {
+        ticketImageOverlay.addEventListener('click', (e) => {
+            if (e.target === ticketImageOverlay) ticketImageOverlay.classList.add('hidden');
+        });
+    }
 
     if (safetyCommitCheckbox && safetyCommitError) {
         safetyCommitCheckbox.addEventListener('change', () => {

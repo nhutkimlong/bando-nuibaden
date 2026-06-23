@@ -1178,5 +1178,33 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Hiển thị Ảnh Vé để Ấn Giữ Lưu (Hỗ trợ Zalo/Safari di động) -->
+    <div id="ticketImageOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 z-[99999] flex flex-col items-center justify-start p-4 md:p-6 overflow-y-auto hidden">
+        <div class="w-full max-w-md mx-auto text-center space-y-4 my-auto animate-fade-in-up">
+            <div class="text-white">
+                <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-500 text-white mb-2 shadow-md">
+                    <i class="fa-solid fa-check text-xl"></i>
+                </span>
+                <h3 class="text-lg font-bold uppercase tracking-wide">Đã Tạo Ảnh Vé Thành Công!</h3>
+                <p class="text-xs text-slate-300 mt-1 px-4 leading-relaxed">
+                    <i class="fa-solid fa-hand-pointer text-emerald-400 mr-1 animate-bounce text-sm"></i>
+                    <strong>Ấn giữ vào ảnh vé bên dưới từ 2-3 giây</strong>, sau đó chọn <strong>"Lưu hình ảnh" (Save Image)</strong> hoặc <strong>"Tải ảnh về"</strong> để lưu vào điện thoại.
+                </p>
+            </div>
+            
+            <!-- Vùng hiển thị ảnh kết quả -->
+            <div class="relative inline-block bg-white rounded-3xl p-1 shadow-2xl border border-white/10 max-w-[90vw]">
+                <img id="ticketResultImage" src="" alt="Ảnh Vé Leo Núi" class="w-full h-auto rounded-2xl max-h-[60vh] object-contain shadow-inner">
+            </div>
+            
+            <!-- Nút đóng quay lại -->
+            <div class="pt-2">
+                <button type="button" id="closeTicketImageOverlayBtn" class="bg-white hover:bg-slate-100 text-slate-900 font-extrabold py-3 px-8 rounded-xl transition duration-150 text-sm shadow-md min-w-[150px]">
+                    Quay lại
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
