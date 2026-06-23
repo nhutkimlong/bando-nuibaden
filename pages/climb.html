@@ -562,6 +562,151 @@
         </div>
     </div>
 
+    <!-- Loading Modal -->
+    <div id="registrationLoadingModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[250] p-4 hidden">
+        <div class="bg-white rounded-xl shadow-2xl p-6 md:p-8 max-w-sm w-full text-center">
+            <div class="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <h3 id="loadingModalTitle" class="text-xl font-bold text-gray-800 mb-2">Đang gửi đăng ký...</h3>
+            <p id="loadingModalDesc" class="text-gray-600 text-sm mb-4">Hệ thống đang lưu trữ thông tin cam kết và tạo hồ sơ đăng ký leo núi của bạn.</p>
+            <div id="loadingModalDetails" class="text-left bg-gray-50 rounded-lg p-3 text-xs text-gray-500 space-y-1">
+                <div class="flex items-center text-green-600 font-medium">
+                    <i class="fa-solid fa-circle-check mr-2"></i> Đã chuẩn bị thông tin cam kết
+                </div>
+                <div class="flex items-center text-green-600 font-medium">
+                    <i class="fa-solid fa-circle-check mr-2"></i> Đã đóng gói chữ ký
+                </div>
+                <div id="loadingStatusText" class="flex items-center text-blue-600 font-medium animate-pulse">
+                    <i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải thông tin lên máy chủ...
+                </div>
+            </div>
+            <p class="text-xs text-red-500 mt-4 italic font-medium"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Vui lòng không đóng trình duyệt hoặc tải lại trang.</p>
+        </div>
+    </div>
+
+    <!-- Registration Success Modal -->
+    <div id="registrationSuccessModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-start sm:items-center justify-center z-[200] p-4 md:p-6 overflow-y-auto hidden">
+        <style>
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+            .animate-fade-in-up {
+                animation: fadeInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            }
+        </style>
+        <div id="registrationTicketCard" class="relative bg-gradient-to-b from-green-600 to-emerald-700 rounded-3xl shadow-2xl w-full max-w-md mx-auto p-1 overflow-hidden animate-fade-in-up my-4 sm:my-8">
+            
+            <!-- Confetti/Light effect header -->
+            <div class="text-center py-6 text-white relative">
+                <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg border border-white/30 animate-bounce">
+                    <i class="fa-solid fa-circle-check text-white text-3xl"></i>
+                </div>
+                <h3 class="text-xl md:text-2xl font-black uppercase tracking-wide">Đăng ký thành công!</h3>
+                <p class="text-xs text-green-100 mt-1">Hệ thống đã ghi nhận chuyến leo núi của bạn</p>
+            </div>
+            
+            <!-- Ticket container -->
+            <div class="relative bg-white rounded-2xl p-5 md:p-6 shadow-inner text-gray-800">
+                
+                <!-- Badge Status -->
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs font-bold text-gray-400 tracking-wider">VÉ LEO NÚI ĐIỆN TỬ</span>
+                    <span class="bg-green-100 text-green-700 text-xs font-extrabold px-3 py-1 rounded-full border border-green-200 tracking-wide uppercase">HỢP LỆ / VALID</span>
+                </div>
+                
+                <!-- Ticket details (top part) -->
+                <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <span class="text-gray-400 block font-medium">MÃ ĐĂNG KÝ</span>
+                            <span id="ticketCode" class="text-sm font-bold text-emerald-700 tracking-wide">NBD-123456</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 block font-medium">THỜI GIAN ĐĂNG KÝ</span>
+                            <span id="ticketRegTime" class="text-sm font-semibold">15:05 23/06/2026</span>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-gray-100 pt-2 text-xs">
+                        <span class="text-gray-400 block font-medium">HỌ TÊN TRƯỞNG ĐOÀN</span>
+                        <span id="ticketLeaderName" class="text-sm font-bold text-gray-800">Nguyễn Văn An</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <span class="text-gray-400 block font-medium">SỐ ĐIỆN THOẠI</span>
+                            <span id="ticketPhone" class="text-sm font-semibold">0912345678</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 block font-medium">CMND/CCCD</span>
+                            <span id="ticketCCCD" class="text-sm font-semibold">079123456789</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <span class="text-gray-400 block font-medium">SỐ LƯỢNG THÀNH VIÊN</span>
+                            <span id="ticketGroupSize" class="text-sm font-bold text-gray-800">5 Người</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400 block font-medium">NGÀY & GIỜ LEO</span>
+                            <span id="ticketClimbDateTime" class="text-sm font-semibold text-gray-800">23/06/2026 08:30</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs">
+                        <span class="text-gray-400 block font-medium">ĐỊA CHỈ THƯỜNG TRÚ</span>
+                        <span id="ticketAddress" class="text-sm font-medium text-gray-700">TP. Hồ Chí Minh</span>
+                    </div>
+
+                    <div id="ticketMemberListContainer" class="text-xs pt-1 hidden">
+                        <span class="text-gray-400 block font-medium">DANH SÁCH ĐOÀN</span>
+                        <div id="ticketMemberList" class="mt-1 bg-gray-50 border border-gray-100 rounded-lg p-2 max-h-20 overflow-y-auto font-mono text-[11px] leading-relaxed text-gray-600">
+                            <!-- Members names will be injected here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ticket Separator with Punch Holes -->
+                <div class="relative my-4">
+                    <div class="absolute left-0 top-1/2 -translate-y-1/2 -ml-5 md:-ml-6 w-6 h-6 bg-gray-900 bg-opacity-75 rounded-full z-20"></div>
+                    <div class="absolute right-0 top-1/2 -translate-y-1/2 -mr-5 md:-mr-6 w-6 h-6 bg-gray-900 bg-opacity-75 rounded-full z-20"></div>
+                    <div class="border-t border-dashed border-gray-300 w-full"></div>
+                </div>
+                
+                <!-- QR code and instructions (bottom part) -->
+                <div class="pt-2 text-center">
+                    <div class="inline-block bg-white border border-gray-100 p-2 rounded-xl shadow-sm mb-3">
+                        <img id="ticketQRCode" src="" alt="QR Code Xác minh" class="w-32 h-32 md:w-36 md:h-36 mx-auto">
+                    </div>
+                    
+                    <p class="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
+                        <i class="fa-solid fa-camera-retro text-emerald-600 mr-1"></i>
+                        <strong>QUAN TRỌNG:</strong> Hãy <strong>chụp ảnh màn hình điện thoại</strong> chứa vé này và mã QR để trình diện cho nhân viên bảo vệ quét đối chiếu nhanh chóng.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Actions buttons -->
+            <div class="p-4 flex gap-3">
+                <button type="button" id="downloadTicketBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-150 ease-in-out text-center text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Tải ảnh vé</span>
+                </button>
+                <button type="button" id="closeSuccessModalBtn" class="flex-1 bg-white hover:bg-gray-100 text-emerald-800 font-bold py-3 px-4 rounded-xl shadow-md transition duration-150 ease-in-out text-center text-sm">
+                    Đóng / Hoàn tất
+                </button>
+            </div>
+        </div>
+    </div>
+
+
          <!-- Modal Xác nhận Đại diện Nhóm/Cá nhân -->
      <div id="representativeModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-[200] p-2 md:p-4 overflow-y-auto hidden">
          <div class="bg-white rounded-lg shadow-xl p-3 md:p-6 w-full max-w-lg mx-auto max-h-[95vh] overflow-y-auto">
@@ -977,5 +1122,61 @@
             };
         });
     </script>
+
+    <!-- Guard Ticket Verification Overlay -->
+    <div id="guardVerificationOverlay" class="fixed inset-0 bg-slate-100 z-[9999] flex flex-col items-center justify-start p-4 md:p-6 overflow-y-auto hidden">
+        <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden my-auto animate-fade-in-up">
+            <!-- Header status -->
+            <div class="bg-gradient-to-r from-emerald-500 to-green-600 p-6 text-center text-white">
+                <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-white/20">
+                    <i class="fa-solid fa-circle-check text-3xl"></i>
+                </div>
+                <h2 class="text-xl font-bold uppercase tracking-wider">Xác Nhận Đăng Ký</h2>
+                <div class="mt-1 bg-white/20 text-xs px-3 py-1 rounded-full inline-block font-semibold">VÉ HỢP LỆ / VALID TICKET</div>
+            </div>
+            
+            <!-- Details table -->
+            <div class="p-6 space-y-4 text-sm text-gray-700">
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-gray-400 font-medium">Mã vé:</span>
+                    <span id="verifyCode" class="font-bold text-emerald-600">N/A</span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-gray-400 font-medium">Trưởng đoàn:</span>
+                    <span id="verifyLeader" class="font-bold text-gray-800">N/A</span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-gray-400 font-medium">Số điện thoại:</span>
+                    <span id="verifyPhone" class="font-semibold text-gray-800">N/A</span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-gray-400 font-medium">CMND/CCCD:</span>
+                    <span id="verifyCCCD" class="font-semibold text-gray-800">N/A</span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-gray-400 font-medium">Số lượng đoàn:</span>
+                    <span id="verifySize" class="font-bold text-gray-800">N/A</span>
+                </div>
+                <div class="flex justify-between border-b border-gray-100 pb-2">
+                    <span class="text-gray-400 font-medium">Ngày & Giờ leo:</span>
+                    <span id="verifyDateTime" class="font-semibold text-gray-800">N/A</span>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-xs text-blue-800 flex items-start space-x-2 mt-4">
+                    <i class="fa-solid fa-circle-info text-blue-600 mt-0.5 text-sm"></i>
+                    <p class="leading-relaxed">
+                        Thông tin này được giải mã trực tiếp từ mã QR đăng ký ban đầu. Ban Quản Lý xác nhận vé đăng ký này hợp lệ cho hoạt động leo núi Bà Đen.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="p-4 bg-gray-50 border-t border-gray-100 text-center">
+                <a href="climb.html" class="inline-block bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-6 rounded-xl transition duration-150 text-sm shadow-sm">
+                    Trở về Trang chủ
+                </a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

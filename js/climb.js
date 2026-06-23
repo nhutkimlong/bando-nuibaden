@@ -43,6 +43,11 @@ let downloadGpxBtn;
 let representativeModal, startRegistrationBtn, startRegistrationArea, registrationFormContainer;
 let cancelRepresentativeBtn, confirmRepresentativeBtn;
 
+// Loading & Success Modals Elements
+let registrationLoadingModal, registrationSuccessModal, closeSuccessModalBtn, downloadTicketBtn;
+let ticketCode, ticketRegTime, ticketLeaderName, ticketPhone, ticketCCCD, ticketGroupSize, ticketClimbDateTime, ticketAddress, ticketMemberListContainer, ticketMemberList, ticketQRCode;
+let loadingModalTitle, loadingModalDesc, loadingModalDetails;
+
 // --- Trekking Route Data (Unchanged) ---
 const powerPoleTrailGeoJSON = { /* ... GeoJSON data ... */
     "type": "Feature", "properties": { "name": "Đường cột điện", "highway": "footway", "surface": "wood" }, "geometry": { "type": "LineString", "coordinates": [ [106.1664847, 11.3636370], [106.1662692, 11.3638531], [106.1660653, 11.3641397], [106.1658347, 11.3646262], [106.1656858, 11.3648313], [106.1656147, 11.3649273], [106.1655959, 11.3650180], [106.1655664, 11.3650864], [106.1655718, 11.3651890], [106.1655557, 11.3652626], [106.1655128, 11.3652941], [106.1655182, 11.3653730], [106.1655772, 11.3654467], [106.1656845, 11.3655229], [106.1657301, 11.3656255], [106.1657944, 11.3657175], [106.1658615, 11.3657780], [106.1659151, 11.3658595], [106.1659715, 11.3659647], [106.1659929, 11.3660725], [106.1659634, 11.3661593], [106.1659634, 11.3662671], [106.1659634, 11.3663775], [106.1659205, 11.3664696], [106.1658347, 11.3666615], [106.1658695, 11.3667825], [106.1659151, 11.3668772], [106.1659701, 11.3670507], [106.1659902, 11.3671165], [106.1660090, 11.3672335], [106.1660399, 11.3672861], [106.1660747, 11.3673558], [106.1660935, 11.3674346], [106.1661042, 11.3675780], [106.1661163, 11.3676674], [106.1661592, 11.3677370], [106.1661579, 11.3678370], [106.1661525, 11.3678777], [106.1661941, 11.3679869], [106.1661954, 11.3680855], [106.1661726, 11.3681289], [106.1661418, 11.3681972], [106.1661606, 11.3682879], [106.1661887, 11.3683432], [106.1662021, 11.3684786], [106.1661726, 11.3685312], [106.1661056, 11.3685917], [106.1660586, 11.3686574], [106.1660466, 11.3687231], [106.1660814, 11.3687915], [106.1661230, 11.3689559], [106.1661538, 11.3690058], [106.1661860, 11.3691057], [106.1662196, 11.3692214], [106.1662732, 11.3695580], [106.1663081, 11.3697092], [106.1663108, 11.3697645], [106.1663550, 11.3698407], [106.1663537, 11.3699038], [106.1663376, 11.3699301], [106.1662826, 11.3699538], [106.1662665, 11.3699801], [106.1662786, 11.3700274], [106.1662893, 11.3701339], [106.1662839, 11.3702273], [106.1662330, 11.3702733], [106.1661673, 11.3703285], [106.1661109, 11.3703798], [106.1660801, 11.3704679], [106.1661029, 11.3705034], [106.1661150, 11.3706085], [106.1660747, 11.3706546], [106.1660036, 11.3706940], [106.1659460, 11.3707663], [106.1659540, 11.3708215], [106.1659607, 11.3708597], [106.1659768, 11.3709504], [106.1659648, 11.3710266], [106.1659326, 11.3710635], [106.1658950, 11.3711029], [106.1658816, 11.3711516], [106.1658803, 11.3712055], [106.1658937, 11.3712765], [106.1659648, 11.3713317], [106.1660358, 11.3713856], [106.1661109, 11.3714355], [106.1661914, 11.3715013], [106.1662450, 11.3715512], [106.1662531, 11.3715999], [106.1662692, 11.3716696], [106.1663349, 11.3717222], [106.1663859, 11.3717458], [106.1663993, 11.3717682], [106.1663912, 11.3718458], [106.1663778, 11.3718878], [106.1663872, 11.3720088], [106.1664677, 11.3721468], [106.1664797, 11.3722165], [106.1665106, 11.3722770], [106.1665481, 11.3723007], [106.1666380, 11.3723493], [106.1666822, 11.3724137], [106.1667533, 11.3724913], [106.1668164, 11.3725492], [106.1668579, 11.3726202], [106.1668982, 11.3727451], [106.1669223, 11.3728371], [106.1669451, 11.3730028], [106.1669759, 11.3731014], [106.1670202, 11.3731526], [106.1670819, 11.3732802], [106.1670685, 11.3732933], [106.1670698, 11.3733393], [106.1671248, 11.3734537], [106.1671382, 11.3736062], [106.1671101, 11.3736628], [106.1670497, 11.3737377], [106.1670524, 11.3738311], [106.1670765, 11.3739481], [106.1670832, 11.3740519], [106.1670698, 11.3741558], [106.1671020, 11.3741847], [106.1671449, 11.3742307], [106.1671972, 11.3742768], [106.1672334, 11.3743359], [106.1672455, 11.3744122], [106.1672187, 11.3744753], [106.1672133, 11.3745410], [106.1672737, 11.3745778], [106.1672965, 11.3746396], [106.1672629, 11.3746935], [106.1672388, 11.3747593], [106.1672576, 11.3747803], [106.1673193, 11.3748855], [106.1674038, 11.3749933], [106.1675017, 11.3750472], [106.1675969, 11.3751669], [106.1676760, 11.3752589], [106.1677310, 11.3753049], [106.1677793, 11.3753575], [106.1678115, 11.3754061], [106.1678651, 11.3754811], [106.1679067, 11.3755034], [106.1679764, 11.3755521], [106.1680703, 11.3756428], [106.1680904, 11.3757256], [106.1681360, 11.3757703], [106.1682138, 11.3758624], [106.1682741, 11.3759518], [106.1682996, 11.3760307], [106.1683251, 11.3761385], [106.1683425, 11.3762305], [106.1683492, 11.3762897], [106.1683801, 11.3763436], [106.1684230, 11.3763817], [106.1684659, 11.3764027], [106.1686094, 11.3764856], [106.1686765, 11.3765395], [106.1687408, 11.3766013], [106.1688025, 11.3766736], [106.1688253, 11.3767314], [106.1688428, 11.3768629], [106.1688401, 11.3770088], [106.1688602, 11.3770601], [106.1688924, 11.3771837], [106.1688910, 11.3772560], [106.1688857, 11.3773323], [106.1688937, 11.3774335], [106.1689031, 11.3775807], [106.1689259, 11.3776794], [106.1689407, 11.3777293], [106.1689661, 11.3778161], [106.1689970, 11.3779055], [106.1690345, 11.3779699], [106.1690949, 11.3780725], [106.1691257, 11.3781619], [106.1691847, 11.3782487], [106.1692277, 11.3783025], [106.1692920, 11.3784051], [106.1692934, 11.3784695], [106.1693148, 11.3785537], [106.1693121, 11.3786786], [106.1693242, 11.3787180], [106.1693484, 11.3787732], [106.1693470, 11.3788390], [106.1693417, 11.3788666], [106.1693470, 11.3789823], [106.1693457, 11.3791032], [106.1693497, 11.3792255], [106.1693538, 11.3793057], [106.1693591, 11.3793649], [106.1693524, 11.3794135], [106.1693644, 11.3795068], [106.1693604, 11.3796199], [106.1693510, 11.3796541], [106.1692840, 11.3797409], [106.1692679, 11.3798710], [106.1692384, 11.3799991], [106.1692277, 11.3801642], [106.1692317, 11.3802891], [106.1692518, 11.3803496], [106.1692800, 11.3804443], [106.1692558, 11.3805521], [106.1693001, 11.3806993], [106.1692947, 11.3808347], [106.1692491, 11.3809715], [106.1691834, 11.3810970], [106.1691532, 11.3812423], [106.1692143, 11.3813435], [106.1693477, 11.3814671], [106.1694603, 11.3815263], [106.1695898, 11.3815881], [106.1696689, 11.3817189], [106.1697579, 11.3818330] ] } };
@@ -203,6 +208,14 @@ function normalizeVi(str) {
         .normalize('NFD')
         .replace(/\p{Diacritic}/gu, '')
         .toLowerCase();
+}
+
+function removeVietnameseDiacritics(str) {
+    return String(str || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D');
 }
 
 // --- Date/Time Validation Helpers ---
@@ -432,12 +445,23 @@ async function handleRegistrationSubmit(event) {
     // Bật hiệu ứng loading và disable nút Đăng ký để tránh click nhiều lần
     setLoadingState(registerBtn, registerSpinner, true);
     
+    // Hiển thị Loading Modal
+    if (registrationLoadingModal) {
+        if (loadingModalTitle) loadingModalTitle.textContent = 'Đang xác định vị trí...';
+        if (loadingModalDesc) loadingModalDesc.textContent = 'Hệ thống đang kiểm tra tọa độ GPS của bạn để đảm bảo bạn ở đúng địa điểm đăng ký.';
+        if (loadingModalDetails) loadingModalDetails.classList.add('hidden');
+        registrationLoadingModal.classList.remove('hidden');
+    }
+    
     // Kiểm tra vị trí trước khi cho phép đăng ký
     showMessage('Đang kiểm tra vị trí đăng ký...', 'info', 0);
 
     if (!navigator.geolocation) {
         showMessage('Trình duyệt không hỗ trợ định vị. Vui lòng sử dụng thiết bị khác.', 'error');
         setLoadingState(registerBtn, registerSpinner, false);
+        if (registrationLoadingModal) {
+            registrationLoadingModal.classList.add('hidden');
+        }
         return;
     }
 
@@ -488,6 +512,9 @@ function handleLocationCheckForRegistration(position) {
     if (!position || !position.coords) {
         showMessage('Không thể xác định vị trí. Vui lòng thử lại.', 'error');
         setLoadingState(registerBtn, registerSpinner, false);
+        if (registrationLoadingModal) {
+            registrationLoadingModal.classList.add('hidden');
+        }
         return;
     }
     
@@ -508,6 +535,9 @@ function handleLocationCheckForRegistration(position) {
         if (!isClimbDateTimeWithinGrace(climbDateVal2, climbTimeVal2, 30)) {
             showMessage('Ngày/giờ leo chỉ được sớm hơn tối đa 30 phút so với hiện tại.', 'error');
             setLoadingState(registerBtn, registerSpinner, false);
+            if (registrationLoadingModal) {
+                registrationLoadingModal.classList.add('hidden');
+            }
             return;
         }
         // Validate names (leader + members) with basic length only
@@ -515,6 +545,9 @@ function handleLocationCheckForRegistration(position) {
         if (!leaderNameVal || leaderNameVal.length < 2 || leaderNameVal.length > 100) {
             showMessage('Họ và tên không hợp lệ.', 'error');
             setLoadingState(registerBtn, registerSpinner, false);
+            if (registrationLoadingModal) {
+                registrationLoadingModal.classList.add('hidden');
+            }
             return;
         }
         const memberListRawCheck2 = (formData.get('memberList') || '').toString();
@@ -523,6 +556,9 @@ function handleLocationCheckForRegistration(position) {
             if (!name || name.length < 2 || name.length > 100) {
                 showMessage('Danh sách thành viên chứa tên không hợp lệ.', 'error');
                 setLoadingState(registerBtn, registerSpinner, false);
+                if (registrationLoadingModal) {
+                    registrationLoadingModal.classList.add('hidden');
+                }
                 return;
             }
         }
@@ -531,6 +567,9 @@ function handleLocationCheckForRegistration(position) {
         if (!isValidNationalId(nationalId)) {
             showMessage('Số CMND/CCCD phải gồm 9 số hoặc 12 số bắt đầu bằng 0.', 'error');
             setLoadingState(registerBtn, registerSpinner, false);
+            if (registrationLoadingModal) {
+                registrationLoadingModal.classList.add('hidden');
+            }
             return;
         }
         
@@ -562,11 +601,17 @@ function handleLocationCheckForRegistration(position) {
 
         setTimeout(() => {
             setLoadingState(registerBtn, registerSpinner, false);
+            if (registrationLoadingModal) {
+                registrationLoadingModal.classList.add('hidden');
+            }
             showCommitmentModal();
         }, 2000);
     } else {
         showMessage(`Vị trí không hợp lệ (cách ${distance.toFixed(0)}m). Vui lòng di chuyển đến đúng địa điểm đăng ký và thử lại.`, 'error', 10000);
         setLoadingState(registerBtn, registerSpinner, false);
+        if (registrationLoadingModal) {
+            registrationLoadingModal.classList.add('hidden');
+        }
     }
 }
 
@@ -597,6 +642,9 @@ function handleLocationErrorForRegistration(error) {
     const fullMessage = detailedMsg ? `${errorMsg} ${detailedMsg}` : errorMsg;
     showMessage(fullMessage, 'error', 12000);
     setLoadingState(registerBtn, registerSpinner, false);
+    if (registrationLoadingModal) {
+        registrationLoadingModal.classList.add('hidden');
+    }
 }
 
 
@@ -760,6 +808,118 @@ function hideCommitmentModal() {
     }
     pendingRegistrationData = null;
     clearSignature();
+}
+
+// Ẩn modal đăng ký thành công
+function hideSuccessModal() {
+    if (registrationSuccessModal) {
+        registrationSuccessModal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    
+    // Khôi phục khu vực bắt đầu đăng ký
+    if (startRegistrationArea && registrationFormContainer) {
+        registrationFormContainer.classList.add('hidden');
+        startRegistrationArea.classList.remove('hidden');
+        startRegistrationArea.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Tải động thư viện html2canvas-pro
+function loadHtml2Canvas() {
+    if (window.html2canvas) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        console.log('Đang tải thư viện html2canvas-pro từ CDN...');
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/html2canvas-pro@latest/dist/html2canvas.min.js';
+        script.onload = () => {
+            console.log('Thư viện html2canvas đã tải xong.');
+            resolve();
+        };
+        script.onerror = () => {
+            console.error('Không thể tải thư viện html2canvas.');
+            reject(new Error('Không thể tải thư viện xuất ảnh.'));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+// Xử lý chụp ảnh và tải xuống ticket đăng ký thành công
+async function handleDownloadTicketImage() {
+    const ticketCard = document.getElementById('registrationTicketCard');
+    if (!ticketCard) {
+        showMessage('Không tìm thấy vé đăng ký để tải.', 'error');
+        return;
+    }
+
+    if (!downloadTicketBtn) return;
+    const originalContent = downloadTicketBtn.innerHTML;
+    downloadTicketBtn.disabled = true;
+    downloadTicketBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tạo ảnh...';
+
+    try {
+        await loadHtml2Canvas();
+        
+        // Đợi 400ms để đảm bảo mã QR Code từ API đã được hiển thị đầy đủ
+        await new Promise(resolve => setTimeout(resolve, 400));
+        
+        // Chụp ticketCard
+        const canvas = await html2canvas(ticketCard, {
+            useCORS: true,
+            allowTaint: true,
+            scale: 3, // Độ phân giải cao sắc nét
+            backgroundColor: null // Giữ nền trong suốt cho các góc bo tròn
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Tạo link để tải xuống
+        const a = document.createElement('a');
+        const codeText = ticketCode ? ticketCode.textContent : 'Ve_Dang_Ky';
+        a.href = imgData;
+        a.download = `Ve_Leo_Nui_${codeText}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        showMessage('Đã tải ảnh vé thành công!', 'success', 4000);
+    } catch (error) {
+        console.error('Lỗi chụp ảnh vé:', error);
+        showMessage('Không thể tải ảnh tự động. Vui lòng tự chụp lại màn hình điện thoại của bạn.', 'error', 8000);
+    } finally {
+        downloadTicketBtn.disabled = false;
+        downloadTicketBtn.innerHTML = originalContent;
+    }
+}
+
+// Hiển thị màn hình xác minh đăng ký cho bảo vệ (quét từ QR)
+function showVerificationScreen(urlParams) {
+    const overlay = document.getElementById('guardVerificationOverlay');
+    if (!overlay) return;
+
+    // Hiển thị lớp phủ
+    overlay.classList.remove('hidden');
+    document.title = 'Xác minh đăng ký leo núi';
+
+    // Điền dữ liệu từ tham số URL
+    const verifyCode = document.getElementById('verifyCode');
+    const verifyLeader = document.getElementById('verifyLeader');
+    const verifyPhone = document.getElementById('verifyPhone');
+    const verifyCCCD = document.getElementById('verifyCCCD');
+    const verifySize = document.getElementById('verifySize');
+    const verifyDateTime = document.getElementById('verifyDateTime');
+
+    if (verifyCode) verifyCode.textContent = urlParams.get('code') || 'N/A';
+    if (verifyLeader) verifyLeader.textContent = urlParams.get('leader') || 'N/A';
+    if (verifyPhone) verifyPhone.textContent = urlParams.get('phone') || 'N/A';
+    if (verifyCCCD) verifyCCCD.textContent = urlParams.get('cccd') || 'N/A';
+    
+    const size = urlParams.get('size') || '0';
+    if (verifySize) verifySize.textContent = `${size} Người`;
+    
+    const date = urlParams.get('date') || '--/--/----';
+    const time = urlParams.get('time') || '--:--';
+    if (verifyDateTime) verifyDateTime.textContent = `${date} ${time}`;
 }
 
 // --- Certification Flow Functions ---
@@ -1343,6 +1503,16 @@ async function handleConfirmCommitment() {
         }
     }
 
+    // Thiết lập nội dung cho Loading Modal khi gửi đăng ký
+    if (loadingModalTitle) loadingModalTitle.textContent = 'Đang gửi đăng ký...';
+    if (loadingModalDesc) loadingModalDesc.textContent = 'Hệ thống đang lưu trữ thông tin cam kết và tạo hồ sơ đăng ký leo núi của bạn.';
+    if (loadingModalDetails) loadingModalDetails.classList.remove('hidden');
+
+    // Hiển thị Loading Modal
+    if (registrationLoadingModal) {
+        registrationLoadingModal.classList.remove('hidden');
+    }
+
     // Thông báo chờ
     showMessage('Vui lòng chờ, đang tạo bản cam kết...', 'info', 0);
     setLoadingState(confirmCommitmentBtn, null, true);
@@ -1369,17 +1539,76 @@ async function handleConfirmCommitment() {
         const result = await response.json();
         if (result.success) {
             hideMessage(); // Ẩn thông báo đợi trước khi hiển thị thành công
-            showMessage('Đăng ký thành công! Vui lòng kiểm tra email.', 'success', 10000);
+            
+            // Tạo mã đăng ký ngẫu nhiên client-side
+            const regDate = new Date();
+            const formattedTime = String(regDate.getHours()).padStart(2, '0') + ':' + String(regDate.getMinutes()).padStart(2, '0');
+            const formattedDate = String(regDate.getDate()).padStart(2, '0') + '/' + String(regDate.getMonth() + 1).padStart(2, '0') + '/' + regDate.getFullYear();
+            const regTimeStr = `${formattedTime} ${formattedDate}`;
+            
+            const phoneStr = String(pendingRegistrationData.phoneNumber || '');
+            const last4Phone = phoneStr.length >= 4 ? phoneStr.slice(-4) : 'xxxx';
+            const randomNum = Math.floor(1000 + Math.random() * 9000);
+            const ticketCodeStr = `NBD-${last4Phone}-${randomNum}`;
+
+            // Điền thông tin vào Success Modal (Vé điện tử)
+            if (ticketCode) ticketCode.textContent = ticketCodeStr;
+            if (ticketRegTime) ticketRegTime.textContent = regTimeStr;
+            if (ticketLeaderName) ticketLeaderName.textContent = pendingRegistrationData.leaderName;
+            if (ticketPhone) ticketPhone.textContent = pendingRegistrationData.phoneNumber;
+            if (ticketCCCD) ticketCCCD.textContent = pendingRegistrationData.cccd;
+            if (ticketGroupSize) ticketGroupSize.textContent = `${pendingRegistrationData.groupSize} Người`;
+            
+            const climbDateFormatted = formatDateToDDMMYYYY(pendingRegistrationData.climbDate);
+            const climbTimeStr = pendingRegistrationData.climbTime || '--:--';
+            if (ticketClimbDateTime) ticketClimbDateTime.textContent = `${climbDateFormatted} ${climbTimeStr}`;
+            if (ticketAddress) ticketAddress.textContent = pendingRegistrationData.address;
+
+            // Xử lý danh sách đoàn
+            if (ticketMemberListContainer && ticketMemberList) {
+                const memberListStr = pendingRegistrationData.memberList || '';
+                const membersArray = memberListStr.split('\n').map(m => m.trim()).filter(Boolean);
+                if (membersArray.length > 0) {
+                    ticketMemberList.innerHTML = membersArray.map((m, idx) => `${idx + 1}. ${escapeHtml(m)}`).join('<br>');
+                    ticketMemberListContainer.classList.remove('hidden');
+                } else {
+                    ticketMemberListContainer.classList.add('hidden');
+                }
+            }
+            // Tạo mã QR Code
+            if (ticketQRCode) {
+                const verifyUrl = new URL(window.location.origin + window.location.pathname);
+                verifyUrl.searchParams.append('verify', '1');
+                verifyUrl.searchParams.append('code', ticketCodeStr);
+                verifyUrl.searchParams.append('leader', removeVietnameseDiacritics(pendingRegistrationData.leaderName));
+                verifyUrl.searchParams.append('phone', pendingRegistrationData.phoneNumber);
+                verifyUrl.searchParams.append('cccd', pendingRegistrationData.cccd);
+                verifyUrl.searchParams.append('size', pendingRegistrationData.groupSize);
+                verifyUrl.searchParams.append('date', climbDateFormatted);
+                verifyUrl.searchParams.append('time', climbTimeStr);
+                
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(verifyUrl.toString())}&ecc=M`;
+                ticketQRCode.src = qrUrl;
+            }
+            // Hiển thị Success Modal
+            if (registrationSuccessModal) {
+                registrationSuccessModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            // Reset form
             registrationForm.reset();
             if (safetyCommitError) safetyCommitError.classList.add('hidden');
             
-            // Đóng modal
+            // Đóng các modal trung gian
+            if (registrationLoadingModal) registrationLoadingModal.classList.add('hidden');
             hideCommitmentModal();
         } else {
             throw new Error(result.message || 'Đăng ký thất bại từ máy chủ.');
         }
     } catch (error) {
         hideMessage(); // Ẩn thông báo đợi trước khi hiển thị lỗi
+        if (registrationLoadingModal) registrationLoadingModal.classList.add('hidden');
         showMessage(`Lỗi đăng ký: ${error.message}. Vui lòng thử lại.`, 'error', 15000);
     } finally {
         setLoadingState(confirmCommitmentBtn, null, false);
@@ -1394,6 +1623,14 @@ async function handleConfirmCommitment() {
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
+    // Kiểm tra xem có đang ở chế độ xác minh vé dành cho bảo vệ không
+    const searchStr = window.location.search.replace(/&amp;amp;/g, '&').replace(/&amp;/g, '&');
+    const urlParams = new URLSearchParams(searchStr);
+    if (urlParams.has('verify')) {
+        showVerificationScreen(urlParams);
+        return; // Dừng khởi tạo phần còn lại của trang vì bảo vệ chỉ cần xem màn hình xác minh
+    }
+
     // Khởi tạo tất cả DOM elements
     initializeDOMElements();
     
@@ -1523,9 +1760,35 @@ function initializeDOMElements() {
     // Cập nhật năm hiện tại
     if (currentYearSpan) currentYearSpan.textContent = new Date().getFullYear();
 
-    // Đảm bảo modal cam kết được ẩn khi khởi tạo
+    // Loading & Success Modals
+    registrationLoadingModal = document.getElementById('registrationLoadingModal');
+    loadingModalTitle = document.getElementById('loadingModalTitle');
+    loadingModalDesc = document.getElementById('loadingModalDesc');
+    loadingModalDetails = document.getElementById('loadingModalDetails');
+    registrationSuccessModal = document.getElementById('registrationSuccessModal');
+    downloadTicketBtn = document.getElementById('downloadTicketBtn');
+    closeSuccessModalBtn = document.getElementById('closeSuccessModalBtn');
+    ticketCode = document.getElementById('ticketCode');
+    ticketRegTime = document.getElementById('ticketRegTime');
+    ticketLeaderName = document.getElementById('ticketLeaderName');
+    ticketPhone = document.getElementById('ticketPhone');
+    ticketCCCD = document.getElementById('ticketCCCD');
+    ticketGroupSize = document.getElementById('ticketGroupSize');
+    ticketClimbDateTime = document.getElementById('ticketClimbDateTime');
+    ticketAddress = document.getElementById('ticketAddress');
+    ticketMemberListContainer = document.getElementById('ticketMemberListContainer');
+    ticketMemberList = document.getElementById('ticketMemberList');
+    ticketQRCode = document.getElementById('ticketQRCode');
+
+    // Đảm bảo các modal được ẩn khi khởi tạo
     if (commitmentModal) {
         commitmentModal.classList.add('hidden');
+    }
+    if (registrationLoadingModal) {
+        registrationLoadingModal.classList.add('hidden');
+    }
+    if (registrationSuccessModal) {
+        registrationSuccessModal.classList.add('hidden');
     }
 }
 
@@ -1632,6 +1895,8 @@ function setupEventListeners() {
     if (cancelCommitmentBtn) cancelCommitmentBtn.addEventListener('click', hideCommitmentModal);
     if (clearSignatureBtn) clearSignatureBtn.addEventListener('click', clearSignature);
     if (confirmCommitmentBtn) confirmCommitmentBtn.addEventListener('click', handleConfirmCommitment);
+    if (closeSuccessModalBtn) closeSuccessModalBtn.addEventListener('click', hideSuccessModal);
+    if (downloadTicketBtn) downloadTicketBtn.addEventListener('click', handleDownloadTicketImage);
 
     if (safetyCommitCheckbox && safetyCommitError) {
         safetyCommitCheckbox.addEventListener('change', () => {
