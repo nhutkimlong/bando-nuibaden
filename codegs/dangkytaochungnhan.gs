@@ -185,6 +185,27 @@ function handleRegistration(requestData) {
     const status = 'Registered';
     const safetyCommitValue = safetyCommit ? 'Đã cam kết' : 'Chưa cam kết';
 
+    // --- BƯỚC 1: LƯU THÔNG TIN ĐĂNG KÝ VÀO SHEET NGAY LẬP TỨC (ƯU TIÊN HÀNG ĐẦU) ---
+    // Khởi tạo dòng mới với các trường Chữ ký & Link PDF tạm thời để trống
+    const newRow = createRowArray(cols, {
+        [COL_TIMESTAMP]: timestamp, [COL_LEADER_NAME]: leaderName,
+        [COL_PHONE_NUMBER]: "'" + phoneNumber, [COL_ADDRESS]: address,
+        [COL_GROUP_SIZE]: groupSize, [COL_EMAIL]: email,
+        [COL_CLIMB_DATE]: climbDate, [COL_CLIMB_TIME]: climbTime,
+        [COL_BIRTHDAY]: birthday,
+        [COL_CCCD]: cccd,
+        [COL_SIGNATURE_IMAGE]: '',
+        [COL_SAFETY_COMMIT]: safetyCommitValue, [COL_MEMBER_LIST]: processedMemberList,
+        [COL_STATUS]: status, [COL_CERT_LINKS]: '',
+        [COL_COMMITMENT_PDF]: ''
+    });
+
+    sheet.appendRow(newRow);
+    SpreadsheetApp.flush();
+    const addedRowIndex = sheet.getLastRow();
+    Logger.log(`Registration saved IMMEDIATELY for ${leaderName} (${phoneNumber}) at Row ${addedRowIndex}`);
+
+    // --- BƯỚC 2: XỬ LÝ LƯU CHỮ KÝ VÀ CẬP NHẬT BỔ SUNG VÀO SHEET ---
     let signatureFileUrl = '';
     if (signatureData && signatureData.startsWith('data:image')) {
       try {
@@ -192,14 +213,12 @@ function handleRegistration(requestData) {
         const contentType = signatureData.split(';')[0].split(':')[1];
         const decodedBytes = Utilities.base64Decode(base64Data);
 
-        // Lấy ngày đăng ký (timestamp) theo định dạng ddMMyyyy
         const regDate = new Date();
         const dd = String(regDate.getDate()).padStart(2, '0');
         const mm = String(regDate.getMonth() + 1).padStart(2, '0');
         const yyyy = regDate.getFullYear();
         const dateStr = `${dd}${mm}${yyyy}`;
 
-        // Tạo tên file: ddMMyyyy-Tên đăng ký_signature.png
         const safeName = leaderName.replace(/[^\p{L}\p{N}\s_-]/gu, '').replace(/\s+/g, '_');
         const fileName = `${dateStr}-${safeName}_signature.png`;
 
@@ -208,11 +227,17 @@ function handleRegistration(requestData) {
         const file = folder.createFile(blob);
         file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
         signatureFileUrl = file.getUrl();
+
+        if (signatureFileUrl && cols[COL_SIGNATURE_IMAGE]) {
+          sheet.getRange(addedRowIndex, cols[COL_SIGNATURE_IMAGE]).setValue(signatureFileUrl);
+          SpreadsheetApp.flush();
+        }
       } catch (e) {
         Logger.log('Lỗi lưu chữ ký: ' + e);
       }
     }
 
+    // --- BƯỚC 3: TẠO PDF CAM KẾT VÀ CẬP NHẬT BỔ SUNG VÀO SHEET ---
     let commitmentPDFUrl = '';
     try {
       const regDate = new Date();
@@ -223,31 +248,20 @@ function handleRegistration(requestData) {
       const safeName = leaderName.replace(/[^\p{L}\p{N}\s_-]/gu, '').replace(/\s+/g, '_');
       const fileName = `${dateStr}-${safeName}_commitment`;
 
-      const folder = DriveApp.getFolderById(SIGNATURE_FOLDER_ID); // Hoặc folder riêng cho PDF cam kết
+      const folder = DriveApp.getFolderById(SIGNATURE_FOLDER_ID);
       commitmentPDFUrl = createCommitmentPDF({
         leaderName, birthday, cccd, address, phoneNumber, email, groupSize, climbDate, climbTime
       }, signatureData, COMMITMENT_TEMPLATE_ID, folder, fileName);
+
+      if (commitmentPDFUrl && cols[COL_COMMITMENT_PDF]) {
+        sheet.getRange(addedRowIndex, cols[COL_COMMITMENT_PDF]).setValue(commitmentPDFUrl);
+        SpreadsheetApp.flush();
+      }
     } catch (e) {
       Logger.log('Lỗi tạo PDF cam kết: ' + e);
     }
 
-    const newRow = createRowArray(cols, {
-        [COL_TIMESTAMP]: timestamp, [COL_LEADER_NAME]: leaderName,
-        [COL_PHONE_NUMBER]: "'" + phoneNumber, [COL_ADDRESS]: address,
-        [COL_GROUP_SIZE]: groupSize, [COL_EMAIL]: email,
-        [COL_CLIMB_DATE]: climbDate, [COL_CLIMB_TIME]: climbTime,
-        [COL_BIRTHDAY]: birthday,
-        [COL_CCCD]: cccd,
-        [COL_SIGNATURE_IMAGE]: signatureFileUrl,
-        [COL_SAFETY_COMMIT]: safetyCommitValue, [COL_MEMBER_LIST]: processedMemberList,
-        [COL_STATUS]: status, [COL_CERT_LINKS]: '',
-        [COL_COMMITMENT_PDF]: commitmentPDFUrl
-    });
-
-    sheet.appendRow(newRow);
-    SpreadsheetApp.flush();
-    Logger.log(`Registration saved for ${leaderName} (${phoneNumber})`);
-
+    // --- BƯỚC 4: GỬI EMAIL XÁC NHẬN ---
     if (SEND_CONFIRMATION_EMAIL && email) {
       try {
         const subject = `Xác nhận đăng ký leo núi Bà Đen - ${leaderName || 'Khách'}`;
