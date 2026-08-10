@@ -58,39 +58,29 @@ function showMessage(message, type = 'info', duration = 6000) {
     clearTimeout(messageTimeout);
     const iconClass = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle';
     const colorClass = type === 'success' ? 'bg-green-100 border-green-400 text-green-800' : type === 'error' ? 'bg-red-100 border-red-400 text-red-800' : type === 'warning' ? 'bg-yellow-100 border-yellow-400 text-yellow-800' : 'bg-blue-100 border-blue-400 text-blue-800';
+    if (!messageBox) messageBox = document.getElementById('messageBox');
+    if (!messageBox) return;
+
     messageBox.innerHTML = `
         <div class="flex items-center">
-            <i class="fa-solid ${iconClass} text-xl mr-3"></i>
+            <i class="fa-solid ${iconClass} text-xl mr-3 flex-shrink-0"></i>
             <span class="flex-1">${message}</span>
             <button id="closeMessageBtn" class="ml-4 text-lg text-gray-500 hover:text-gray-800 focus:outline-none" aria-label="Đóng">&times;</button>
         </div>
     `;
-    messageBox.className = `fixed top-6 left-1/2 transform -translate-x-1/2 z-[300] min-w-[280px] max-w-[90vw] px-4 py-3 rounded-lg shadow-lg border ${colorClass} message-box transition-all duration-300`;
+    messageBox.className = `fixed top-6 left-1/2 transform -translate-x-1/2 z-[300] min-w-[280px] max-w-[90vw] px-4 py-3 rounded-lg shadow-lg border ${colorClass} message-box transition-all duration-300 show`;
     messageBox.classList.remove('hidden');
-    messageBox.classList.add('show');
 
     // Nút đóng thủ công
     const closeBtn = document.getElementById('closeMessageBtn');
     if (closeBtn) closeBtn.onclick = hideMessage;
 
-    // Ẩn khi click/touch bất kỳ đâu trên màn hình (trừ messageBox)
-    function hideOnUserAction(e) {
-        if (!messageBox.contains(e.target)) {
-            hideMessage();
-        }
-    }
-    document.addEventListener('mousedown', hideOnUserAction, { once: true });
-    document.addEventListener('touchstart', hideOnUserAction, { once: true });
-
-    // Scroll vào vùng nhìn thấy nếu bị che
-    setTimeout(() => {
-        messageBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-
     if (duration > 0) messageTimeout = setTimeout(hideMessage, duration);
 }
 function hideMessage() {
     clearTimeout(messageTimeout);
+    if (!messageBox) messageBox = document.getElementById('messageBox');
+    if (!messageBox) return;
     messageBox.classList.remove('show');
     setTimeout(() => messageBox.classList.add('hidden'), 300); // Đợi hiệu ứng fade out
 }
@@ -1049,11 +1039,15 @@ function handleLocationErrorForVerification(error) {
 
 
 
-/** Fetches the member list from Google Apps Script for selection. */
 async function fetchMembersListForSelection(phoneNumber) {
     const fetchUrl = new URL(GOOGLE_SCRIPT_URL);
     fetchUrl.searchParams.append('action', 'getMembersByPhone');
     fetchUrl.searchParams.append('phone', phoneNumber);
+
+    const errorCard = document.getElementById('phoneVerificationErrorCard');
+    const errorTitle = document.getElementById('phoneVerificationErrorTitle');
+    const errorText = document.getElementById('phoneVerificationErrorText');
+    if (errorCard) errorCard.classList.add('hidden');
 
     if(memberListContainer) {
         memberListContainer.innerHTML = '';
@@ -1069,30 +1063,38 @@ async function fetchMembersListForSelection(phoneNumber) {
              let serverErrorMsg = `Lỗi ${response.status}: ${response.statusText}`;
              try { const errResult = await response.json(); serverErrorMsg = errResult.message || serverErrorMsg; } catch(e) {}
              throw new Error(serverErrorMsg);
-         }
+        }
         const result = await response.json();
 
-        if (result.success && Array.isArray(result.members)) {
+        if (result.success && Array.isArray(result.members) && result.members.length > 0) {
             hideMessage();
+            if (errorCard) errorCard.classList.add('hidden');
             verifiedPhoneNumber = phoneNumber;
             displayMemberListForSelection(result.members, phoneNumber);
             if(phoneVerificationArea) phoneVerificationArea.classList.add('hidden');
             if(memberSelectionArea) memberSelectionArea.classList.remove('hidden');
         } else {
-             throw new Error(result.message || 'Không thể lấy danh sách thành viên.');
+            throw new Error(result.message || `Số điện thoại ${phoneNumber} chưa được đăng ký trong hệ thống.`);
         }
     } catch (error) {
-        // Check if it's a "not found" error
-        if (error.message.includes('not found') || error.message.includes('Không tìm thấy')) {
-            showMessage(`Số điện thoại ${phoneNumber} chưa được đăng ký trong hệ thống. Vui lòng kiểm tra lại hoặc đăng ký trước.`, 'error', 12000);
+        let msg = error.message || '';
+        if (msg.includes('not found') || msg.includes('Không tìm thấy') || msg.includes('chưa được đăng ký')) {
+            msg = `Số điện thoại ${phoneNumber} chưa được đăng ký trong hệ thống hoặc không có trong danh sách.`;
+            if (errorTitle) errorTitle.textContent = 'Không tìm thấy đăng ký!';
         } else {
-            showMessage(`Lỗi tải danh sách: ${error.message}. Vui lòng thử lại.`, 'error', 10000);
+            if (errorTitle) errorTitle.textContent = 'Có lỗi xảy ra!';
         }
-        resetVerificationProcess();
+
+        if (errorText) errorText.textContent = msg;
+        if (errorCard) errorCard.classList.remove('hidden');
+
+        showMessage(msg, 'error', 10000);
+        
+        hideMemberSelectionAndResults();
+        if(phoneVerificationArea) phoneVerificationArea.classList.remove('hidden');
     } finally {
         setLoadingState(verifyPhoneBtn, certSpinner, false);
         if(memberListContainer) memberListContainer.classList.remove('loading');
-        if (messageBox.classList.contains('info')) hideMessage();
     }
 }
 
@@ -1104,13 +1106,17 @@ function displayMemberListForSelection(members, phoneNumber) {
 
     if (members.length === 0) {
         memberListContainer.innerHTML = `
-            <div class="text-center py-6">
+            <div class="text-center py-6 bg-red-50/60 rounded-lg border border-red-200 p-5">
                 <div class="text-red-500 mb-2">
-                    <i class="fas fa-exclamation-triangle text-2xl"></i>
+                    <i class="fas fa-exclamation-triangle text-3xl"></i>
                 </div>
-                <p class="text-red-600 font-medium mb-2">Số điện thoại chưa đăng ký!</p>
+                <p class="text-red-700 font-semibold text-base mb-1">Không tìm thấy đăng ký!</p>
                 <p class="text-gray-600 text-sm">Số điện thoại <strong>${phoneNumber}</strong> chưa được đăng ký trong hệ thống.</p>
-                <p class="text-gray-500 text-sm mt-2">Vui lòng kiểm tra lại số điện thoại hoặc đăng ký trước khi nhận chứng chỉ.</p>
+                <div class="mt-4 flex justify-center">
+                    <button type="button" onclick="resetVerificationProcess()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow transition">
+                        <i class="fa-solid fa-arrow-rotate-left mr-1.5"></i> Nhập số điện thoại khác
+                    </button>
+                </div>
             </div>
         `;
         if (generateSelectedBtn) generateSelectedBtn.disabled = true;
@@ -1924,6 +1930,26 @@ function setupEventListeners() {
     if (generateSelectedBtn) generateSelectedBtn.addEventListener('click', handleGenerateSelectedCertificates);
     if (resetVerificationBtn) resetVerificationBtn.addEventListener('click', resetVerificationProcess);
     if (downloadGpxBtn) downloadGpxBtn.addEventListener('click', handleDownloadGpx);
+
+    // Nút thử lại nhập SĐT khác trên thông báo lỗi
+    const retryPhoneBtn = document.getElementById('retryPhoneBtn');
+    if (retryPhoneBtn) {
+        retryPhoneBtn.addEventListener('click', () => {
+            const errorCard = document.getElementById('phoneVerificationErrorCard');
+            if (errorCard) errorCard.classList.add('hidden');
+            if (verifyPhoneNumberInput) {
+                verifyPhoneNumberInput.value = '';
+                verifyPhoneNumberInput.focus();
+            }
+        });
+    }
+
+    if (verifyPhoneNumberInput) {
+        verifyPhoneNumberInput.addEventListener('input', () => {
+            const errorCard = document.getElementById('phoneVerificationErrorCard');
+            if (errorCard) errorCard.classList.add('hidden');
+        });
+    }
 
     // Cropper Modal Button Listeners
     if (cancelCropBtn) cancelCropBtn.addEventListener('click', handleCancelCrop);
