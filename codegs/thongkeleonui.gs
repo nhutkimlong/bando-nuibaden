@@ -1,6 +1,5 @@
     // --- Configuration ---
     const SPREADSHEET_ID = '1mAQNIo2QVfl4uNiuyVS2lAiSEnA40AkDrnIhoBRQGag'; // ID của Google Sheet của bạn
-    const SHEET_NAME = 'Sheet1';              // Tên trang tính chứa dữ liệu
 
     // Expected Column Names (same as dangkytaochungnhan.gs)
     const COL_TIMESTAMP = 'Timestamp';         // A
@@ -28,8 +27,8 @@
     function getCachedSheet() {
       const now = Date.now();
       if (!_sheetCache || (now - _lastCacheTime) > (300 * 1000)) { // 5 minutes cache
-        const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-        _sheetCache = ss.getSheetByName(SHEET_NAME);
+        const dataSheets = getAllDataSheets();
+        _sheetCache = dataSheets.length > 0 ? dataSheets[dataSheets.length - 1] : SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
         _lastCacheTime = now;
       }
       return _sheetCache;
@@ -181,19 +180,35 @@
       });
     }
 
+    const EXCLUDED_SHEET_NAMES = ['XU_LY_TRUNG', 'THONG_KE_LEO_NUI'];
+
+    function getAllDataSheets() {
+      let ss;
+      try {
+        ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+      } catch(e) {
+        ss = SpreadsheetApp.getActiveSpreadsheet();
+      }
+      const sheets = ss.getSheets();
+      return sheets.filter(sheet => !EXCLUDED_SHEET_NAMES.includes(sheet.getName()));
+    }
+
     // --- Data Retrieval ---
     function getSheetData() {
       try {
-        const sheet = getCachedSheet();
-        if (!sheet) {
-          throw new Error(`Không tìm thấy trang tính có tên "${SHEET_NAME}".`);
-        }
-        const lastRow = sheet.getLastRow();
-        if (lastRow < 2) {
-          return []; // No data rows
-        }
-        const range = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
-        return range.getValues();
+        const dataSheets = getAllDataSheets();
+        let combinedData = [];
+
+        dataSheets.forEach(sheet => {
+          const lastRow = sheet.getLastRow();
+          if (lastRow >= 2) {
+            const range = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
+            const rows = range.getValues();
+            combinedData = combinedData.concat(rows);
+          }
+        });
+
+        return combinedData;
       } catch (error) {
         Logger.log('Error getting sheet data: ' + error.message);
         throw new Error('Lỗi khi truy cập Google Sheet: ' + error.message);
@@ -778,35 +793,27 @@
         let members = [];
         let found = false;
         
-        const sheet = getCachedSheet();
-        const cols = getCachedColumnIndices(sheet);
-        if (!cols) {
-          return { success: false, message: 'Không thể lấy thông tin cột từ Google Sheet.' };
-        }
+        const dataSheets = getAllDataSheets();
+        for (let s = dataSheets.length - 1; s >= 0; s--) {
+          const sheet = dataSheets[s];
+          const cols = getColumnIndices(sheet);
+          if (!cols || !cols[COL_PHONE_NUMBER] || !cols[COL_MEMBER_LIST]) continue;
 
-        // Get all data from sheet (including headers)
-        const allData = sheet.getDataRange().getValues();
-        
-        // Search from bottom to top for most recent registration (skip header row)
-        Logger.log(`Searching through ${allData.length - 1} data rows for phone: ${phoneNumber}`);
-        for (let i = allData.length - 1; i >= 1; i--) {
-          const row = allData[i];
-          const sheetPhone = String(row[cols[COL_PHONE_NUMBER] - 1] || '').replace(/^'/, '').trim();
-          
-          // Debug: Log first few phone numbers to check format
-          if (i >= allData.length - 5) {
-            Logger.log(`Row ${i + 1}: Phone="${row[cols[COL_PHONE_NUMBER] - 1]}" -> Cleaned="${sheetPhone}"`);
-          }
-          
-          if (sheetPhone === phoneNumber) {
-            const listStr = String(row[cols[COL_MEMBER_LIST] - 1] || '').trim();
-            if (listStr) {
-              members = listStr.split('\n').map(name => name.trim()).filter(Boolean);
+          const allData = sheet.getDataRange().getValues();
+          for (let i = allData.length - 1; i >= 1; i--) {
+            const row = allData[i];
+            const sheetPhone = String(row[cols[COL_PHONE_NUMBER] - 1] || '').replace(/^'/, '').trim();
+            if (sheetPhone === phoneNumber) {
+              const listStr = String(row[cols[COL_MEMBER_LIST] - 1] || '').trim();
+              if (listStr) {
+                members = listStr.split('\n').map(name => name.trim()).filter(Boolean);
+              }
+              found = true;
+              Logger.log(`Found members for ${phoneNumber} in sheet "${sheet.getName()}" at row ${i + 1}. Count: ${members.length}`);
+              break;
             }
-            found = true;
-            Logger.log(`Found members for ${phoneNumber} at row ${i + 1}. Count: ${members.length}`);
-            break;
           }
+          if (found) break;
         }
         
         if (!found) {
@@ -965,13 +972,13 @@
 
       // Update sheet with certificate links
       try {
-        const sheet = getCachedSheet();
-        const cols = getCachedColumnIndices(sheet);
-        if (sheet && rowIndex && cols) {
-          if (cols[COL_STATUS]) sheet.getRange(rowIndex, cols[COL_STATUS]).setValue(statusMsg);
-          if (cols[COL_CERT_LINKS]) sheet.getRange(rowIndex, cols[COL_CERT_LINKS]).setValue(pdfLinks.length > 0 ? JSON.stringify(pdfLinks) : '');
+        const targetSheet = regDetails.sheet;
+        const cols = getColumnIndices(targetSheet);
+        if (targetSheet && rowIndex && cols) {
+          if (cols[COL_STATUS]) targetSheet.getRange(rowIndex, cols[COL_STATUS]).setValue(statusMsg);
+          if (cols[COL_CERT_LINKS]) targetSheet.getRange(rowIndex, cols[COL_CERT_LINKS]).setValue(pdfLinks.length > 0 ? JSON.stringify(pdfLinks) : '');
           SpreadsheetApp.flush();
-          Logger.log(`Updated Sheet: Row ${rowIndex}, Status=${statusMsg}`);
+          Logger.log(`Updated Sheet "${targetSheet.getName()}": Row ${rowIndex}, Status=${statusMsg}`);
         }
       } catch (e) { 
         Logger.log(`!!! Error updating sheet row ${rowIndex}: ${e}`); 
@@ -1025,45 +1032,45 @@
       });
     }
 
-    // Find registration details by phone number
+    // Find registration details by phone number across all data sheets
     function findRegistrationDetails(data, phoneNumber) {
-      const sheet = getCachedSheet();
-      const cols = getCachedColumnIndices(sheet);
-      if (!cols) {
-        Logger.log('findRegDetails: Cannot get column indices.');
-        return null;
-      }
+      const dataSheets = getAllDataSheets();
 
-      // Get all data from sheet (including headers)
-      const allData = sheet.getDataRange().getValues();
-      
-      // Search from bottom to top for most recent registration (skip header row)
-      for (let i = allData.length - 1; i >= 1; i--) {
-        const row = allData[i];
-        const sheetPhone = String(row[cols[COL_PHONE_NUMBER] - 1] || '').replace(/^'/, '').trim();
-        
-        if (sheetPhone === phoneNumber) {
-          const climbDateValue = row[cols[COL_CLIMB_DATE] - 1];
-          const climbTimeValue = String(row[cols[COL_CLIMB_TIME] - 1] || '').trim();
-          const registrationTsValue = row[cols[COL_TIMESTAMP] - 1];
-          const leaderNameValue = String(row[cols[COL_LEADER_NAME] - 1] || 'Bạn').trim();
-          const userEmailValue = String(row[cols[COL_EMAIL] - 1] || '').trim().toLowerCase();
-          const memberListStrValue = String(row[cols[COL_MEMBER_LIST] - 1] || '').trim();
+      for (let s = dataSheets.length - 1; s >= 0; s--) {
+        const sheet = dataSheets[s];
+        const cols = getColumnIndices(sheet);
+        if (!cols) continue;
+
+        const allData = sheet.getDataRange().getValues();
+        for (let i = allData.length - 1; i >= 1; i--) {
+          const row = allData[i];
+          const sheetPhone = String(row[cols[COL_PHONE_NUMBER] - 1] || '').replace(/^'/, '').trim();
           
-          Logger.log(`DEBUG findRegDetails: Found Row ${i+1}. Leader=${leaderNameValue}, Email=${userEmailValue}, Date=${climbDateValue}`);
-          
-          return {
-            rowIndex: i + 1, // +1 because we're using actual sheet row numbers
-            leaderName: leaderNameValue, 
-            userEmail: userEmailValue || null,
-            memberListString: memberListStrValue,
-            climbDate: climbDateValue instanceof Date ? climbDateValue : (climbDateValue ? new Date(climbDateValue) : new Date()),
-            climbTime: climbTimeValue,
-            registrationTimestamp: registrationTsValue instanceof Date ? registrationTsValue : (registrationTsValue ? new Date(registrationTsValue) : null)
-          };
+          if (sheetPhone === phoneNumber) {
+            const climbDateValue = row[cols[COL_CLIMB_DATE] - 1];
+            const climbTimeValue = String(row[cols[COL_CLIMB_TIME] - 1] || '').trim();
+            const registrationTsValue = row[cols[COL_TIMESTAMP] - 1];
+            const leaderNameValue = String(row[cols[COL_LEADER_NAME] - 1] || 'Bạn').trim();
+            const userEmailValue = String(row[cols[COL_EMAIL] - 1] || '').trim().toLowerCase();
+            const memberListStrValue = String(row[cols[COL_MEMBER_LIST] - 1] || '').trim();
+            
+            Logger.log(`DEBUG findRegDetails: Found in Sheet "${sheet.getName()}", Row ${i+1}. Leader=${leaderNameValue}, Email=${userEmailValue}`);
+            
+            return {
+              sheet: sheet,
+              sheetName: sheet.getName(),
+              rowIndex: i + 1,
+              leaderName: leaderNameValue, 
+              userEmail: userEmailValue || null,
+              memberListString: memberListStrValue,
+              climbDate: climbDateValue instanceof Date ? climbDateValue : (climbDateValue ? new Date(climbDateValue) : new Date()),
+              climbTime: climbTimeValue,
+              registrationTimestamp: registrationTsValue instanceof Date ? registrationTsValue : (registrationTsValue ? new Date(registrationTsValue) : null)
+            };
+          }
         }
       }
-      Logger.log(`findRegDetails: Phone ${phoneNumber} not found.`); 
+      Logger.log(`findRegDetails: Phone ${phoneNumber} not found in any sheet.`); 
       return null;
     }
 

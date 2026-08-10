@@ -1,6 +1,5 @@
 // ----- CONFIGURATION -----
 const SPREADSHEET_ID = '1mAQNIo2QVfl4uNiuyVS2lAiSEnA40AkDrnIhoBRQGag';
-const SHEET_NAME = 'Sheet1';
 const TEMPLATE_ID = '115gn6bhafyTvAh1gniLiVEB80fG-F_Mz-XRvnbN2OtQ'; // Google Doc Template
 const PDF_FOLDER_ID = '14JzQgv28umQScrRM0_pVEDK8FN_4kKi2';
 const SIGNATURE_FOLDER_ID = '1YuCz2W0-DKm_Hya1-GG114mZzFJq4wSc'; // Thư mục lưu chữ ký
@@ -40,16 +39,127 @@ const COL_CCCD = 'CCCD';
 const COL_COMMITMENT_PDF = 'CommitmentPDFLink';
 const COL_SIGNATURE_IMAGE = 'SignatureImage';
 
-// --- Cache Management ---
+// --- Monthly Sheet & Cache Management ---
 let _sheetCache = null;
 let _columnCache = null;
 let _lastCacheTime = 0;
+
+const EXCLUDED_SHEET_NAMES = ['XU_LY_TRUNG', 'THONG_KE_LEO_NUI'];
+
+function getMonthlySheetName(climbDateInput, timestampInput) {
+  let date = null;
+  if (climbDateInput) {
+    if (climbDateInput instanceof Date && !isNaN(climbDateInput.getTime())) {
+      date = climbDateInput;
+    } else if (typeof climbDateInput === 'string') {
+      const str = climbDateInput.trim();
+      let match = str.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+      if (match) {
+        date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+      } else {
+        match = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+        if (match) {
+          date = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+        } else {
+          const d = new Date(str);
+          if (!isNaN(d.getTime())) date = d;
+        }
+      }
+    }
+  }
+
+  if (!date && timestampInput) {
+    if (timestampInput instanceof Date && !isNaN(timestampInput.getTime())) {
+      date = timestampInput;
+    } else {
+      const d = new Date(timestampInput);
+      if (!isNaN(d.getTime())) date = d;
+    }
+  }
+
+  if (!date) date = new Date();
+
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  return `T${month}-${year}`;
+}
+
+function getAllDataSheets(ss) {
+  if (!ss) {
+    try {
+      ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    } catch(e) {
+      ss = SpreadsheetApp.getActiveSpreadsheet();
+    }
+  }
+  const sheets = ss.getSheets();
+  return sheets.filter(sheet => !EXCLUDED_SHEET_NAMES.includes(sheet.getName()));
+}
+
+function formatClimbTimeValue(value) {
+  if (value === null || value === undefined || value === "") return "";
+  let hh = "", mm = "";
+
+  if (Object.prototype.toString.call(value) === "[object Date]" && !isNaN(value)) {
+    hh = String(value.getHours()).padStart(2, '0');
+    mm = String(value.getMinutes()).padStart(2, '0');
+  } else {
+    const text = String(value).trim();
+    const match = text.match(/(\d{1,2}):(\d{2})(:\d{2})?/);
+    if (match) {
+      hh = String(match[1]).padStart(2, '0');
+      mm = match[2];
+    }
+  }
+
+  if (hh && mm) {
+    return "'" + hh + ":" + mm;
+  }
+
+  const cleanText = String(value).trim().replace(/^'/, '');
+  return cleanText ? "'" + cleanText : "";
+}
+
+function getOrCreateMonthlySheet(ss, sheetName) {
+  if (!ss) {
+    try {
+      ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    } catch(e) {
+      ss = SpreadsheetApp.getActiveSpreadsheet();
+    }
+  }
+  let sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+    const headers = [
+      COL_TIMESTAMP, COL_LEADER_NAME, COL_PHONE_NUMBER, COL_ADDRESS,
+      COL_GROUP_SIZE, COL_EMAIL, COL_CLIMB_DATE, COL_CLIMB_TIME,
+      COL_SAFETY_COMMIT, COL_MEMBER_LIST, COL_STATUS, COL_CERT_LINKS,
+      COL_BIRTHDAY, COL_CCCD, COL_COMMITMENT_PDF, COL_SIGNATURE_IMAGE
+    ];
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    const headerRange = sheet.getRange(1, 1, 1, headers.length);
+    headerRange.setFontWeight('bold');
+    headerRange.setBackground('#4a86e8');
+    headerRange.setFontColor('#ffffff');
+    headerRange.setHorizontalAlignment('center');
+    sheet.setFrozenRows(1);
+
+    // Format PhoneNumber (col 3) and ClimbTime (col 8) as Plain Text (@) to prevent 1899 Date conversion
+    sheet.getRange(2, 3, 1000, 1).setNumberFormat("@");
+    sheet.getRange(2, 8, 1000, 1).setNumberFormat("@");
+
+    Logger.log(`Created new monthly sheet "${sheetName}" with standard headers.`);
+  }
+  return sheet;
+}
 
 function getCachedSheet() {
   const now = Date.now();
   if (!_sheetCache || (now - _lastCacheTime) > (CACHE_DURATION * 1000)) {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-    _sheetCache = ss.getSheetByName(SHEET_NAME);
+    const dataSheets = getAllDataSheets(ss);
+    _sheetCache = dataSheets.length > 0 ? dataSheets[dataSheets.length - 1] : ss.getSheets()[0];
     _lastCacheTime = now;
   }
   return _sheetCache;
@@ -174,24 +284,30 @@ function handleRegistration(requestData) {
 
     Logger.log(`Extracted Reg Data OK: leaderName=${leaderName}, phoneNumber=${phoneNumber}, email=${email}`);
 
-    // Use cached sheet for better performance
-    const sheet = getCachedSheet();
-    if (!sheet) throw new Error(`Sheet "${SHEET_NAME}" not found.`);
+    const timestamp = new Date();
+    let ss;
+    try {
+      ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    } catch(e) {
+      ss = SpreadsheetApp.getActiveSpreadsheet();
+    }
 
-    const cols = getCachedColumnIndices(sheet);
+    const targetSheetName = getMonthlySheetName(climbDate, timestamp);
+    const sheet = getOrCreateMonthlySheet(ss, targetSheetName);
+
+    const cols = getColumnIndices(sheet);
     if (!cols) return createJsonResponse({ success: false, message: 'Lỗi cấu hình cột sheet.' });
 
-    const timestamp = new Date();
     const status = 'Registered';
     const safetyCommitValue = safetyCommit ? 'Đã cam kết' : 'Chưa cam kết';
 
-    // --- BƯỚC 1: LƯU THÔNG TIN ĐĂNG KÝ VÀO SHEET NGAY LẬP TỨC (ƯU TIÊN HÀNG ĐẦU) ---
+    // --- BƯỚC 1: LƯU THÔNG TIN ĐĂNG KÝ VÀO SHEET HÀNG THÁNG NGAY LẬP TỨC (ƯU TIÊN HÀNG ĐẦU) ---
     // Khởi tạo dòng mới với các trường Chữ ký & Link PDF tạm thời để trống
     const newRow = createRowArray(cols, {
         [COL_TIMESTAMP]: timestamp, [COL_LEADER_NAME]: leaderName,
         [COL_PHONE_NUMBER]: "'" + phoneNumber, [COL_ADDRESS]: address,
         [COL_GROUP_SIZE]: groupSize, [COL_EMAIL]: email,
-        [COL_CLIMB_DATE]: climbDate, [COL_CLIMB_TIME]: climbTime,
+        [COL_CLIMB_DATE]: climbDate, [COL_CLIMB_TIME]: formatClimbTimeValue(climbTime),
         [COL_BIRTHDAY]: birthday,
         [COL_CCCD]: cccd,
         [COL_SIGNATURE_IMAGE]: '',
@@ -203,7 +319,7 @@ function handleRegistration(requestData) {
     sheet.appendRow(newRow);
     SpreadsheetApp.flush();
     const addedRowIndex = sheet.getLastRow();
-    Logger.log(`Registration saved IMMEDIATELY for ${leaderName} (${phoneNumber}) at Row ${addedRowIndex}`);
+    Logger.log(`Registration saved IMMEDIATELY for ${leaderName} (${phoneNumber}) in Sheet "${targetSheetName}" at Row ${addedRowIndex}`);
 
     // --- BƯỚC 2: XỬ LÝ LƯU CHỮ KÝ VÀ CẬP NHẬT BỔ SUNG VÀO SHEET ---
     let signatureFileUrl = '';
@@ -292,7 +408,7 @@ function handleRegistration(requestData) {
 function handleGenerateCertificatesWithPhotos(requestData) {
     const startTime = Date.now();
     Logger.log(`handleGenerateCertificatesWithPhotos received data: ${JSON.stringify(requestData)}`);
-    const phoneNumber = String(requestData.phone || '').trim();
+    const phoneNumber = String(requestData.phone || requestData.phoneNumber || '').trim();
     const selectedMembers = requestData.members;
     const verificationMethod = requestData.verificationMethod || 'unknown';
     
@@ -309,15 +425,19 @@ function handleGenerateCertificatesWithPhotos(requestData) {
         });
     }
 
-    // Use cached sheet for better performance
-    const sheet = getCachedSheet();
-    if (!sheet) throw new Error(`Sheet "${SHEET_NAME}" not found.`);
+    let ss;
+    try {
+      ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    } catch(e) {
+      ss = SpreadsheetApp.getActiveSpreadsheet();
+    }
 
-    const regDetails = findRegistrationDetails(sheet, phoneNumber);
+    const regDetails = findRegistrationDetails(ss, phoneNumber);
     if (!regDetails) return createJsonResponse({ success: false, message: `Không tìm thấy đăng ký gốc cho SĐT ${phoneNumber}.` });
 
+    const targetSheet = regDetails.sheet;
     const { rowIndex, leaderName = 'Bạn', userEmail = null, climbDate = new Date(), climbTime = '' } = regDetails;
-    Logger.log(`Found registration: Row=${rowIndex}, Leader=${leaderName}, Email=${userEmail}, Date=${climbDate}`);
+    Logger.log(`Found registration in Sheet "${targetSheet.getName()}": Row=${rowIndex}, Leader=${leaderName}, Email=${userEmail}, Date=${climbDate}`);
 
     let destFolder;
     try { destFolder = DriveApp.getFolderById(PDF_FOLDER_ID); } catch (e) { Logger.log(`WARN: PDF Folder ID error. Using root. ${e}`); destFolder = DriveApp.getRootFolder(); }
@@ -386,13 +506,13 @@ function handleGenerateCertificatesWithPhotos(requestData) {
     statusMsg += ` in ${totalTime}s`;
 
     try {
-        _columnCache = null; // Reset cache để đảm bảo lấy đúng indices
-        const cols = getCachedColumnIndices(sheet);
+        _columnCache = null; // Reset cache
+        const cols = getColumnIndices(targetSheet);
         if(cols) {
-            if (cols[COL_STATUS]) sheet.getRange(rowIndex, cols[COL_STATUS]).setValue(statusMsg);
-            if (cols[COL_CERT_LINKS]) sheet.getRange(rowIndex, cols[COL_CERT_LINKS]).setValue(pdfLinks.length > 0 ? JSON.stringify(pdfLinks) : '');
+            if (cols[COL_STATUS]) targetSheet.getRange(rowIndex, cols[COL_STATUS]).setValue(statusMsg);
+            if (cols[COL_CERT_LINKS]) targetSheet.getRange(rowIndex, cols[COL_CERT_LINKS]).setValue(pdfLinks.length > 0 ? JSON.stringify(pdfLinks) : '');
             SpreadsheetApp.flush();
-            Logger.log(`Updated Sheet: Row ${rowIndex}, Status=${statusMsg}, Links=${pdfLinks.length}`);
+            Logger.log(`Updated Sheet "${targetSheet.getName()}": Row ${rowIndex}, Status=${statusMsg}, Links=${pdfLinks.length}`);
         }
     } catch (e) { Logger.log(`!!! Error updating sheet row ${rowIndex}: ${e}`); }
 
@@ -405,8 +525,6 @@ function handleGenerateCertificatesWithPhotos(requestData) {
 
             let htmlBody = `<p>Chào ${escapeHtml(leaderName || 'Bạn')},</p>`;
             htmlBody += `<p>Chúc mừng bạn và đoàn đã chinh phục thành công đỉnh Núi Bà Đen!</p>`;
-            // BỎ thống kê thời gian tạo chứng nhận
-            // htmlBody += `<p><strong>Thống kê:</strong> Đã tạo ${pdfLinks.length}/${selectedMembers.length} chứng nhận trong ${totalTime} giây.</p>`;
             htmlBody += `<p>Link tải chứng nhận điện tử cho các thành viên:</p><ul>`;
             pdfLinks.forEach(linkInfo => {
                 const name = linkInfo?.name ? escapeHtml(linkInfo.name) : '[N/A]';
@@ -447,34 +565,44 @@ function handleGetMembers(phoneNumber) {
     try {
         if (!phoneNumber || !/^[0-9]{10,11}$/.test(phoneNumber)) return createJsonResponse({ success: false, message: 'SĐT không hợp lệ.' });
         
-        // Use cached sheet for better performance
-        const sheet = getCachedSheet();
-        if (!sheet) throw new Error(`Sheet "${SHEET_NAME}" not found.`);
-        
-        const cols = getCachedColumnIndices(sheet);
-        if (!cols || !cols[COL_PHONE_NUMBER] || !cols[COL_MEMBER_LIST]) return createJsonResponse({ success: false, message: 'Lỗi cấu hình cột (getMembers).' });
+        let ss;
+        try {
+          ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+        } catch(e) {
+          ss = SpreadsheetApp.getActiveSpreadsheet();
+        }
+        const dataSheets = getAllDataSheets(ss);
 
-        const phoneCol = cols[COL_PHONE_NUMBER];
-        const memberCol = cols[COL_MEMBER_LIST];
-        const lastRow = sheet.getLastRow();
-        const phoneData = sheet.getRange(2, phoneCol, lastRow - 1, 1).getValues();
-        const memberData = sheet.getRange(2, memberCol, lastRow - 1, 1).getValues();
-        
         let members = [];
         let found = false;
-        
-        // Search from bottom to top for most recent registration
-        for (let i = phoneData.length - 1; i >= 0; i--) {
-            const sheetPhone = String(phoneData[i][0] || '').replace(/^'/, '').trim();
-            if (sheetPhone === phoneNumber) {
-                const listStr = String(memberData[i][0] || '').trim();
-                if (listStr) members = listStr.split('\n').map(name => name.trim()).filter(Boolean);
-                found = true;
-                Logger.log(`Found members for ${phoneNumber} at row ${i + 2}. Count: ${members.length}`);
-                break;
+
+        // Search from bottom to top of each sheet, starting with newest sheet
+        for (let s = dataSheets.length - 1; s >= 0; s--) {
+            const sheet = dataSheets[s];
+            const cols = getColumnIndices(sheet);
+            if (!cols || !cols[COL_PHONE_NUMBER] || !cols[COL_MEMBER_LIST]) continue;
+
+            const phoneCol = cols[COL_PHONE_NUMBER];
+            const memberCol = cols[COL_MEMBER_LIST];
+            const lastRow = sheet.getLastRow();
+            if (lastRow < 2) continue;
+
+            const phoneData = sheet.getRange(2, phoneCol, lastRow - 1, 1).getValues();
+            const memberData = sheet.getRange(2, memberCol, lastRow - 1, 1).getValues();
+
+            for (let i = phoneData.length - 1; i >= 0; i--) {
+                const sheetPhone = String(phoneData[i][0] || '').replace(/^'/, '').trim();
+                if (sheetPhone === phoneNumber) {
+                    const listStr = String(memberData[i][0] || '').trim();
+                    if (listStr) members = listStr.split('\n').map(name => name.trim()).filter(Boolean);
+                    found = true;
+                    Logger.log(`Found members for ${phoneNumber} in sheet "${sheet.getName()}" at row ${i + 2}. Count: ${members.length}`);
+                    break;
+                }
             }
+            if (found) break;
         }
-        
+
         if (!found) return createJsonResponse({ success: false, message: `Không tìm thấy đăng ký cho SĐT ${phoneNumber}.` });
         return createJsonResponse({ success: true, members: members });
     } catch (error) {
@@ -704,33 +832,66 @@ function decodeBase64Image(base64String) {
    return { contentType: match[1], decodedBytes: Utilities.base64Decode(match[2]) };
  }
 
-// --- findRegistrationDetails (Giữ nguyên) ---
-function findRegistrationDetails(sheet, phoneNumber) {
-     const cols = getColumnIndices(sheet);
-     if (!cols || !cols[COL_PHONE_NUMBER] || !cols[COL_LEADER_NAME] || !cols[COL_EMAIL] || !cols[COL_MEMBER_LIST] || !cols[COL_CLIMB_DATE]) { Logger.log("findRegDetails: Missing cols."); return null; }
-     const phoneCol = cols[COL_PHONE_NUMBER], leaderNameCol = cols[COL_LEADER_NAME], emailCol = cols[COL_EMAIL], memberListCol = cols[COL_MEMBER_LIST], climbDateCol = cols[COL_CLIMB_DATE], climbTimeCol = cols[COL_CLIMB_TIME], timestampCol = cols[COL_TIMESTAMP];
-     const data = sheet.getDataRange().getValues();
-     for (let i = data.length - 1; i >= 1; i--) {
-       const sheetPhone = String(data[i][phoneCol - 1] || '').trim();
-       if (sheetPhone === phoneNumber) {
-         const climbDateValue = data[i][climbDateCol - 1];
-         const climbTimeValue = climbTimeCol ? String(data[i][climbTimeCol - 1] || '').trim() : '';
-         const registrationTsValue = timestampCol ? data[i][timestampCol - 1] : null;
-         const leaderNameValue = String(data[i][leaderNameCol - 1] || 'Bạn').trim();
-         const userEmailValue = String(data[i][emailCol - 1] || '').trim().toLowerCase();
-         const memberListStrValue = String(data[i][memberListCol - 1] || '').trim();
-         Logger.log(`DEBUG findRegDetails: Found Row ${i+1}. Leader=${leaderNameValue}, Email=${userEmailValue}, Date=${climbDateValue}`);
-         return {
-           rowIndex: i + 1, leaderName: leaderNameValue, userEmail: userEmailValue || null,
-           memberListString: memberListStrValue,
-           climbDate: climbDateValue instanceof Date ? climbDateValue : (climbDateValue ? new Date(climbDateValue) : new Date()),
-           climbTime: climbTimeValue,
-           registrationTimestamp: registrationTsValue instanceof Date ? registrationTsValue : (registrationTsValue ? new Date(registrationTsValue) : null)
-         };
-       }
-     }
-     Logger.log(`findRegDetails: Phone ${phoneNumber} not found.`); return null;
- }
+// --- findRegistrationDetails (Cập nhật quét đa sheet) ---
+function findRegistrationDetails(ssOrSheet, phoneNumber) {
+  let ss = null;
+  if (ssOrSheet && typeof ssOrSheet.getSheets === 'function') {
+    ss = ssOrSheet;
+  } else if (ssOrSheet && typeof ssOrSheet.getParent === 'function') {
+    ss = ssOrSheet.getParent();
+  } else {
+    try {
+      ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    } catch(e) {
+      ss = SpreadsheetApp.getActiveSpreadsheet();
+    }
+  }
+
+  const dataSheets = getAllDataSheets(ss);
+
+  for (let s = dataSheets.length - 1; s >= 0; s--) {
+    const sheet = dataSheets[s];
+    const cols = getColumnIndices(sheet);
+    if (!cols || !cols[COL_PHONE_NUMBER] || !cols[COL_LEADER_NAME] || !cols[COL_EMAIL] || !cols[COL_MEMBER_LIST] || !cols[COL_CLIMB_DATE]) {
+      continue;
+    }
+    const phoneCol = cols[COL_PHONE_NUMBER];
+    const leaderNameCol = cols[COL_LEADER_NAME];
+    const emailCol = cols[COL_EMAIL];
+    const memberListCol = cols[COL_MEMBER_LIST];
+    const climbDateCol = cols[COL_CLIMB_DATE];
+    const climbTimeCol = cols[COL_CLIMB_TIME];
+    const timestampCol = cols[COL_TIMESTAMP];
+
+    const data = sheet.getDataRange().getValues();
+    for (let i = data.length - 1; i >= 1; i--) {
+      const sheetPhone = String(data[i][phoneCol - 1] || '').replace(/^'/, '').trim();
+      if (sheetPhone === phoneNumber) {
+        const climbDateValue = data[i][climbDateCol - 1];
+        const climbTimeValue = climbTimeCol ? String(data[i][climbTimeCol - 1] || '').trim() : '';
+        const registrationTsValue = timestampCol ? data[i][timestampCol - 1] : null;
+        const leaderNameValue = String(data[i][leaderNameCol - 1] || 'Bạn').trim();
+        const userEmailValue = String(data[i][emailCol - 1] || '').trim().toLowerCase();
+        const memberListStrValue = String(data[i][memberListCol - 1] || '').trim();
+
+        Logger.log(`DEBUG findRegDetails: Found in Sheet "${sheet.getName()}", Row ${i+1}. Leader=${leaderNameValue}, Email=${userEmailValue}`);
+        return {
+          sheet: sheet,
+          sheetName: sheet.getName(),
+          rowIndex: i + 1,
+          leaderName: leaderNameValue,
+          userEmail: userEmailValue || null,
+          memberListString: memberListStrValue,
+          climbDate: climbDateValue instanceof Date ? climbDateValue : (climbDateValue ? new Date(climbDateValue) : new Date()),
+          climbTime: climbTimeValue,
+          registrationTimestamp: registrationTsValue instanceof Date ? registrationTsValue : (registrationTsValue ? new Date(registrationTsValue) : null)
+        };
+      }
+    }
+  }
+  Logger.log(`findRegDetails: Phone ${phoneNumber} not found in any sheet.`);
+  return null;
+}
 
 // --- getColumnIndices (Giữ nguyên) ---
 function getColumnIndices(sheet) {

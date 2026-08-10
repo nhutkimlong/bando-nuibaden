@@ -83,6 +83,22 @@ const CLIMB_DATE_HEADERS = [
   "Ngay du kien leo nui"
 ];
 
+// Cột giờ leo núi
+const CLIMB_TIME_HEADERS = [
+  "ClimbTime",
+  "Climb Time",
+  "Giờ leo núi",
+  "Gio leo nui",
+  "Giờ leo",
+  "Gio leo",
+  "Thời gian leo",
+  "Thoi gian leo",
+  "Giờ đi",
+  "Gio di",
+  "Khung giờ",
+  "Khung gio"
+];
+
 // Cột số khách/số người trong nhóm
 const CLIMB_GUEST_HEADERS = [
   "GroupSize",
@@ -141,11 +157,10 @@ function lamMoiBangXuLy() {
 
 function taoBangXuLy(isReload) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetMain = getDataSheet_();
-  const data = sheetMain.getDataRange().getValues();
-
-  if (data.length <= HEADER_ROW) {
-    if (!isReload) SpreadsheetApp.getUi().alert("Sheet dữ liệu gốc chưa có dữ liệu.");
+  const dataSheets = getDataSheets_();
+  
+  if (dataSheets.length === 0) {
+    if (!isReload) SpreadsheetApp.getUi().alert("Chưa có sheet dữ liệu nào.");
     return;
   }
 
@@ -159,71 +174,90 @@ function taoBangXuLy(isReload) {
     filterToDate = parseDateValue_(sheetTool.getRange(DUP_TO_CELL).getValue());
   }
 
-  const fromKey = filterFromDate ? dateKey_(filterFromDate) : null;
-  const toKey = filterToDate ? dateKey_(filterToDate) : null;
-
-  const header = data[HEADER_ROW - 1];
-  const phoneCol = findColumnByHeaders_(header, PHONE_HEADERS);
-  const dateCol = findColumnByHeaders_(header, CLIMB_DATE_HEADERS);
-
-  if (phoneCol === -1) {
-    if (!isReload) {
-      SpreadsheetApp.getUi().alert(
-        "Không tìm thấy cột số điện thoại.\n\n" +
-        "Vui lòng kiểm tra tiêu đề cột. Cột số điện thoại nên đặt là: PhoneNumber."
-      );
-    }
-    return;
+  // Mặc định giới hạn trong tháng hiện tại nếu không nhập B2 & D2
+  const today = new Date();
+  if (!filterFromDate) {
+    filterFromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+  }
+  if (!filterToDate) {
+    filterToDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
   }
 
-  if (dateCol === -1) {
-    if (!isReload) {
-      SpreadsheetApp.getUi().alert(
-        "Không tìm thấy cột ngày leo núi.\n\n" +
-        "Vui lòng kiểm tra tiêu đề cột. Cột ngày leo núi nên đặt là: ClimbDate."
-      );
-    }
-    return;
-  }
+  const fromKey = dateKey_(filterFromDate);
+  const toKey = dateKey_(filterToDate);
 
   let map = {};
   let skippedNoDateCount = 0;
+  let sampleHeader = null;
 
-  for (let i = HEADER_ROW; i < data.length; i++) {
-    let phone = data[i][phoneCol];
-    const climbDate = parseDateValue_(data[i][dateCol]);
+  dataSheets.forEach(sheetMain => {
+    const sheetName = sheetMain.getName();
 
-    // Chỉ kiểm tra trùng khi có đủ SĐT và ngày leo
-    if (!phone || !climbDate) {
-      if (phone && !climbDate) skippedNoDateCount++;
-      continue;
+    // Bỏ qua các sheet tháng nằm hoàn toàn ngoài khoảng ngày lọc
+    const monthSheetMatch = sheetName.match(/^T(\d{1,2})[\-\_](\d{4})$/i);
+    if (monthSheetMatch) {
+      const sheetMonth = Number(monthSheetMatch[1]) - 1;
+      const sheetYear = Number(monthSheetMatch[2]);
+      const sheetStartDate = new Date(sheetYear, sheetMonth, 1);
+      const sheetEndDate = new Date(sheetYear, sheetMonth + 1, 0);
+      const sheetStartKey = dateKey_(sheetStartDate);
+      const sheetEndKey = dateKey_(sheetEndDate);
+
+      if (sheetEndKey < fromKey || sheetStartKey > toKey) return;
     }
 
-    phone = normalizePhone(phone);
-    if (!phone) continue;
+    const data = sheetMain.getDataRange().getValues();
+    if (data.length <= HEADER_ROW) return;
 
-    const climbKey = dateKey_(climbDate);
+    const header = data[HEADER_ROW - 1];
+    if (!sampleHeader) sampleHeader = header;
 
-    // Lọc theo khoảng ngày leo núi (nếu người dùng có đặt Từ ngày / Đến ngày)
-    if (fromKey && climbKey < fromKey) continue;
-    if (toKey && climbKey > toKey) continue;
+    const phoneCol = findColumnByHeaders_(header, PHONE_HEADERS);
+    const dateCol = findColumnByHeaders_(header, CLIMB_DATE_HEADERS);
 
-    // Điều kiện trùng: cùng SĐT + cùng ngày leo
-    const duplicateKey = phone + "|" + climbKey;
+    if (phoneCol === -1 || dateCol === -1) return;
 
-    if (!map[duplicateKey]) {
-      map[duplicateKey] = {
-        phone: phone,
-        climbDate: climbDate,
-        climbKey: climbKey,
-        items: []
-      };
+    for (let i = HEADER_ROW; i < data.length; i++) {
+      let phone = data[i][phoneCol];
+      const climbDate = parseDateValue_(data[i][dateCol]);
+
+      // Chỉ kiểm tra trùng khi có đủ SĐT và ngày leo
+      if (!phone || !climbDate) {
+        if (phone && !climbDate) skippedNoDateCount++;
+        continue;
+      }
+
+      phone = normalizePhone(phone);
+      if (!phone) continue;
+
+      const climbKey = dateKey_(climbDate);
+
+      // Lọc theo khoảng ngày leo núi
+      if (climbKey < fromKey || climbKey > toKey) continue;
+
+      // Điều kiện trùng: cùng SĐT + cùng ngày leo
+      const duplicateKey = phone + "|" + climbKey;
+
+      if (!map[duplicateKey]) {
+        map[duplicateKey] = {
+          phone: phone,
+          climbDate: climbDate,
+          climbKey: climbKey,
+          items: []
+        };
+      }
+
+      map[duplicateKey].items.push({
+        row: i + 1,
+        sheetName: sheetMain.getName(),
+        values: data[i]
+      });
     }
+  });
 
-    map[duplicateKey].items.push({
-      row: i + 1,
-      values: data[i]
-    });
+  if (!sampleHeader) {
+    if (!isReload) SpreadsheetApp.getUi().alert("Các sheet dữ liệu gốc chưa có dữ liệu hợp lệ.");
+    return;
   }
 
   if (!sheetTool) {
@@ -279,7 +313,7 @@ function taoBangXuLy(isReload) {
   noteRange.breakApart();
   noteRange.merge();
   noteRange
-    .setValue("Để trống B2 & D2 để kiểm tra toàn bộ lịch sử dữ liệu. Nhập ngày leo núi tại B2/D2 nếu chỉ muốn kiểm tra khoảng ngày mong muốn.")
+    .setValue("Mặc định kiểm tra trùng trong tháng hiện tại. Nhập lại Từ ngày (B2) & Đến ngày (D2) nếu bạn muốn kiểm tra khoảng thời gian khác.")
     .setFontFamily("Arial")
     .setFontSize(10)
     .setFontColor("#666666")
@@ -293,9 +327,10 @@ function taoBangXuLy(isReload) {
   const outputHeader = [
     "XÓA?",
     "ROW GỐC",
+    "SHEET GỐC",
     "SĐT CHUẨN HÓA",
     "NGÀY LEO CHUẨN HÓA",
-    ...header
+    ...sampleHeader
   ];
 
   ensureColumns_(sheetTool, outputHeader.length);
@@ -356,12 +391,24 @@ function taoBangXuLy(isReload) {
       row++;
 
       group.items.forEach((item, index) => {
+        const formattedValues = [...item.values];
+        const timeCol = findColumnByHeaders_(sampleHeader, CLIMB_TIME_HEADERS);
+        if (timeCol !== -1) {
+          formattedValues[timeCol] = formatClimbTimeValue_(item.values[timeCol]);
+        }
+        const phoneCol = findColumnByHeaders_(sampleHeader, PHONE_HEADERS);
+        if (phoneCol !== -1) {
+          const p = normalizePhone(item.values[phoneCol]);
+          if (p) formattedValues[phoneCol] = "'" + p;
+        }
+
         const line = [
           false,
           item.row,
+          item.sheetName,
           group.phone,
           formatDate_(group.climbDate),
-          ...item.values
+          ...formattedValues
         ];
 
         sheetTool.getRange(row, 1, 1, line.length).setValues([line]);
@@ -383,6 +430,7 @@ function taoBangXuLy(isReload) {
         sheetTool.getRange(row, 2).setHorizontalAlignment("center");
         sheetTool.getRange(row, 3).setHorizontalAlignment("center");
         sheetTool.getRange(row, 4).setHorizontalAlignment("center");
+        sheetTool.getRange(row, 5).setHorizontalAlignment("center");
 
         checkboxRows.push(row);
         row++;
@@ -398,7 +446,7 @@ function taoBangXuLy(isReload) {
 
   sheetTool.setFrozenRows(4);
   sheetTool.setHiddenGridlines(true);
-  sheetTool.autoResizeColumns(1, Math.min(sheetTool.getLastColumn(), 14));
+  sheetTool.autoResizeColumns(1, Math.min(sheetTool.getLastColumn(), 15));
 
   let message =
     "Đã tạo bảng xử lý trùng SĐT theo điều kiện: cùng SĐT và cùng ngày leo.\n\n" +
@@ -428,7 +476,6 @@ function taoBangXuLy(isReload) {
 function xoaTheoBangXuLy() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheetTool = ss.getSheetByName(DUP_TOOL_SHEET_NAME);
-  const sheetMain = getDataSheet_();
 
   if (!sheetTool) {
     SpreadsheetApp.getUi().alert("Chưa có sheet XU_LY_TRUNG. Vui lòng chạy bước 1 trước.");
@@ -436,30 +483,43 @@ function xoaTheoBangXuLy() {
   }
 
   const data = sheetTool.getDataRange().getValues();
-  let rowsToDelete = [];
+  let sheetRowMap = {};
+  let totalCount = 0;
 
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === true && typeof data[i][1] === "number") {
-      rowsToDelete.push(data[i][1]);
+  for (let i = 4; i < data.length; i++) {
+    if (data[i][0] === true && typeof data[i][1] === "number" && data[i][2]) {
+      const rowNum = data[i][1];
+      const sheetName = String(data[i][2]).trim();
+
+      if (!sheetRowMap[sheetName]) sheetRowMap[sheetName] = [];
+      sheetRowMap[sheetName].push(rowNum);
+      totalCount++;
     }
   }
 
-  if (rowsToDelete.length === 0) {
+  if (totalCount === 0) {
     SpreadsheetApp.getUi().alert("Chưa chọn dòng nào để xóa (Vui lòng tích vào ô 'XÓA?').");
     return;
   }
 
-  rowsToDelete = [...new Set(rowsToDelete)];
-  rowsToDelete.sort((a, b) => b - a);
+  for (const targetSheetName in sheetRowMap) {
+    const targetSheet = ss.getSheetByName(targetSheetName);
+    if (!targetSheet) continue;
 
-  rowsToDelete.forEach(r => {
-    sheetMain.deleteRow(r);
-  });
+    let rowsToDelete = [...new Set(sheetRowMap[targetSheetName])];
+    rowsToDelete.sort((a, b) => b - a);
+
+    rowsToDelete.forEach(r => {
+      targetSheet.deleteRow(r);
+    });
+  }
 
   SpreadsheetApp.getUi().alert(
-    "Đã xóa thành công " + rowsToDelete.length + " dòng khỏi sheet dữ liệu gốc!\n\n" +
-    "Khi nào cần kiểm tra tiếp hoặc qua những ngày sau mới dùng, bạn vui lòng chọn Menu: XỬ LÝ TRÙNG SĐT -> '3. Tải lại / Làm mới bảng trùng'."
+    "Đã xóa thành công " + totalCount + " dòng khỏi các sheet dữ liệu gốc!\n\n" +
+    "Đang tự động tải lại bảng xử lý trùng..."
   );
+
+  taoBangXuLy(true);
 }
 
 
@@ -481,12 +541,13 @@ function taoDashboardLeoNui() {
 
   const today = new Date();
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
   ensureColumns_(sheetDash, 12);
   ensureRows_(sheetDash, 180);
 
   sheetDash.getRange(DASHBOARD_FROM_CELL).setValue(firstDayOfMonth).setNumberFormat("dd/MM/yyyy");
-  sheetDash.getRange(DASHBOARD_TO_CELL).setValue(today).setNumberFormat("dd/MM/yyyy");
+  sheetDash.getRange(DASHBOARD_TO_CELL).setValue(lastDayOfMonth).setNumberFormat("dd/MM/yyyy");
 
   applyDashboardBaseStyle_(sheetDash);
 
@@ -500,7 +561,6 @@ function taoDashboardLeoNui() {
 
 function capNhatThongKeLeoNui() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetMain = getDataSheet_();
 
   let sheetDash = ss.getSheetByName(CLIMB_DASHBOARD_SHEET_NAME);
 
@@ -512,40 +572,23 @@ function capNhatThongKeLeoNui() {
   ensureColumns_(sheetDash, 12);
   ensureRows_(sheetDash, 180);
 
-  const data = sheetMain.getDataRange().getValues();
-
-  if (data.length <= HEADER_ROW) {
-    SpreadsheetApp.getUi().alert("Sheet dữ liệu gốc chưa có dữ liệu.");
+  const dataSheets = getDataSheets_();
+  if (dataSheets.length === 0) {
+    SpreadsheetApp.getUi().alert("Chưa có sheet dữ liệu nào.");
     return;
   }
 
-  const header = data[HEADER_ROW - 1];
+  let fromDate = parseDateValue_(sheetDash.getRange(DASHBOARD_FROM_CELL).getValue());
+  let toDate = parseDateValue_(sheetDash.getRange(DASHBOARD_TO_CELL).getValue());
 
-  const dateCol = findColumnByHeaders_(header, CLIMB_DATE_HEADERS);
-  const guestCol = findColumnByHeaders_(header, CLIMB_GUEST_HEADERS);
-
-  if (dateCol === -1) {
-    SpreadsheetApp.getUi().alert(
-      "Không tìm thấy cột ngày leo núi.\n\n" +
-      "Sheet của bạn cần có tiêu đề cột: ClimbDate."
-    );
-    return;
+  const today = new Date();
+  if (!fromDate) {
+    fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    sheetDash.getRange(DASHBOARD_FROM_CELL).setValue(fromDate).setNumberFormat("dd/MM/yyyy");
   }
-
-  if (guestCol === -1) {
-    SpreadsheetApp.getUi().alert(
-      "Không tìm thấy cột số khách.\n\n" +
-      "Sheet của bạn cần có tiêu đề cột: GroupSize."
-    );
-    return;
-  }
-
-  const fromDate = parseDateValue_(sheetDash.getRange(DASHBOARD_FROM_CELL).getValue());
-  const toDate = parseDateValue_(sheetDash.getRange(DASHBOARD_TO_CELL).getValue());
-
-  if (!fromDate || !toDate) {
-    SpreadsheetApp.getUi().alert("Vui lòng nhập đúng định dạng ngày tại ô B3 và D3.");
-    return;
+  if (!toDate) {
+    toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    sheetDash.getRange(DASHBOARD_TO_CELL).setValue(toDate).setNumberFormat("dd/MM/yyyy");
   }
 
   const fromKey = dateKey_(fromDate);
@@ -563,66 +606,74 @@ function capNhatThongKeLeoNui() {
   let monthlyRangeMap = {};
   let monthlyAllMap = {};
 
-  for (let i = HEADER_ROW; i < data.length; i++) {
-    const row = data[i];
+  dataSheets.forEach(sheetMain => {
+    const data = sheetMain.getDataRange().getValues();
+    if (data.length <= HEADER_ROW) return;
 
-    const climbDate = parseDateValue_(row[dateCol]);
-    if (!climbDate) continue;
+    const header = data[HEADER_ROW - 1];
+    const dateCol = findColumnByHeaders_(header, CLIMB_DATE_HEADERS);
+    const guestCol = findColumnByHeaders_(header, CLIMB_GUEST_HEADERS);
 
-    const climbKey = dateKey_(climbDate);
+    if (dateCol === -1 || guestCol === -1) return;
 
-    let guestCount = parseGuestCount_(row[guestCol]);
+    for (let i = HEADER_ROW; i < data.length; i++) {
+      const row = data[i];
+      const climbDate = parseDateValue_(row[dateCol]);
+      if (!climbDate) continue;
 
-    if (guestCount <= 0) guestCount = 1;
+      const climbKey = dateKey_(climbDate);
+      let guestCount = parseGuestCount_(row[guestCol]);
+      if (guestCount <= 0) guestCount = 1;
 
-    /********************************************************
-     * 1. THỐNG KÊ THEO THÁNG TOÀN BỘ DỮ LIỆU
-     * Không phụ thuộc B3 - D3
-     ********************************************************/
-    const monthKeyValue = monthKey_(climbDate);
+      /********************************************************
+       * 1. THỐNG KÊ THEO THÁNG TOÀN BỘ DỮ LIỆU
+       * Không phụ thuộc B3 - D3
+       ********************************************************/
+      const monthKeyValue = monthKey_(climbDate);
 
-    if (!monthlyAllMap[monthKeyValue]) {
-      monthlyAllMap[monthKeyValue] = {
-        month: monthKeyValue,
-        register: 0,
-        guest: 0
-      };
+      if (!monthlyAllMap[monthKeyValue]) {
+        monthlyAllMap[monthKeyValue] = {
+          month: monthKeyValue,
+          register: 0,
+          guest: 0
+        };
+      }
+
+      monthlyAllMap[monthKeyValue].register++;
+      monthlyAllMap[monthKeyValue].guest += guestCount;
+
+      /********************************************************
+       * 2. THỐNG KÊ THEO NGÀY VÀ THEO THÁNG TRONG GIAI ĐOẠN
+       * Có phụ thuộc B3 - D3
+       ********************************************************/
+      if (climbKey < fromKey || climbKey > toKey) continue;
+
+      totalRegister++;
+      totalGuest += guestCount;
+
+      if (!dailyMap[climbKey]) {
+        dailyMap[climbKey] = {
+          date: climbDate,
+          register: 0,
+          guest: 0
+        };
+      }
+
+      dailyMap[climbKey].register++;
+      dailyMap[climbKey].guest += guestCount;
+
+      if (!monthlyRangeMap[monthKeyValue]) {
+        monthlyRangeMap[monthKeyValue] = {
+          month: monthKeyValue,
+          register: 0,
+          guest: 0
+        };
+      }
+
+      monthlyRangeMap[monthKeyValue].register++;
+      monthlyRangeMap[monthKeyValue].guest += guestCount;
     }
-
-    monthlyAllMap[monthKeyValue].register++;
-    monthlyAllMap[monthKeyValue].guest += guestCount;
-
-    /********************************************************
-     * 2. THỐNG KÊ THEO NGÀY VÀ THEO THÁNG TRONG GIAI ĐOẠN
-     * Có phụ thuộc B3 - D3
-     ********************************************************/
-    if (climbKey < fromKey || climbKey > toKey) continue;
-
-    totalRegister++;
-    totalGuest += guestCount;
-
-    if (!dailyMap[climbKey]) {
-      dailyMap[climbKey] = {
-        date: climbDate,
-        register: 0,
-        guest: 0
-      };
-    }
-
-    dailyMap[climbKey].register++;
-    dailyMap[climbKey].guest += guestCount;
-
-    if (!monthlyRangeMap[monthKeyValue]) {
-      monthlyRangeMap[monthKeyValue] = {
-        month: monthKeyValue,
-        register: 0,
-        guest: 0
-      };
-    }
-
-    monthlyRangeMap[monthKeyValue].register++;
-    monthlyRangeMap[monthKeyValue].guest += guestCount;
-  }
+  });
 
   const activeDays = Object.keys(dailyMap).length;
   const avgGuestPerDay = activeDays > 0 ? totalGuest / activeDays : 0;
@@ -1017,31 +1068,34 @@ function showNoDataMessage_(sheetDash, row, startCol, colCount, message) {
  * VIII. HÀM PHỤ TRỢ
  ************************************************************/
 
-function getDataSheet_() {
+function getDataSheets_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   if (DATA_SHEET_NAME) {
     const namedSheet = ss.getSheetByName(DATA_SHEET_NAME);
-
     if (namedSheet) {
-      return namedSheet;
+      return [namedSheet];
     }
   }
 
   const sheets = ss.getSheets();
+  const dataSheets = [];
 
   for (let i = 0; i < sheets.length; i++) {
     const name = sheets[i].getName();
-
     if (
       name !== DUP_TOOL_SHEET_NAME &&
       name !== CLIMB_DASHBOARD_SHEET_NAME
     ) {
-      return sheets[i];
+      dataSheets.push(sheets[i]);
     }
   }
 
-  return sheets[0];
+  return dataSheets.length > 0 ? dataSheets : [sheets[0]];
+}
+
+function getDataSheet_() {
+  return getDataSheets_()[0];
 }
 
 
@@ -1156,6 +1210,31 @@ function parseGuestCount_(value) {
   const text = value.toString().replace(/[^\d]/g, "");
 
   return text ? Number(text) : 0;
+}
+
+
+function formatClimbTimeValue_(value) {
+  if (value === null || value === undefined || value === "") return "";
+  let hh = "", mm = "";
+
+  if (Object.prototype.toString.call(value) === "[object Date]" && !isNaN(value)) {
+    hh = String(value.getHours()).padStart(2, '0');
+    mm = String(value.getMinutes()).padStart(2, '0');
+  } else {
+    const text = String(value).trim();
+    const match = text.match(/(\d{1,2}):(\d{2})(:\d{2})?/);
+    if (match) {
+      hh = String(match[1]).padStart(2, '0');
+      mm = match[2];
+    }
+  }
+
+  if (hh && mm) {
+    return "'" + hh + ":" + mm;
+  }
+
+  const cleanText = String(value).trim().replace(/^'/, '');
+  return cleanText ? "'" + cleanText : "";
 }
 
 
