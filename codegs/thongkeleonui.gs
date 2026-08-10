@@ -19,61 +19,89 @@
     const COL_COMMITMENT_PDF = 'CommitmentPDFLink';
     const COL_SIGNATURE_IMAGE = 'SignatureImage';
 
+    const HEADER_ALIASES = {
+      [COL_TIMESTAMP]: ['timestamp', 'thời gian', 'dấu thời gian', 'ngày đăng ký', 'thời gian gửi'],
+      [COL_LEADER_NAME]: ['leadername', 'họ tên trưởng đoàn', 'họ tên', 'họ và tên', 'tên trưởng đoàn', 'người đại diện'],
+      [COL_PHONE_NUMBER]: ['phonenumber', 'số điện thoại', 'sđt', 'điện thoại', 'so dien thoai'],
+      [COL_ADDRESS]: ['address', 'địa chỉ', 'nơi ở', 'dia chi'],
+      [COL_GROUP_SIZE]: ['groupsize', 'số lượng người', 'số người', 'số lượng thành viên', 'số lượng', 'so luong'],
+      [COL_EMAIL]: ['email', 'thư điện tử', 'e-mail'],
+      [COL_CLIMB_DATE]: ['climbdate', 'ngày leo núi', 'ngày leo', 'ngày đi', 'ngay leo nui'],
+      [COL_CLIMB_TIME]: ['climbtime', 'thời gian leo núi', 'giờ leo núi', 'giờ leo', 'thời gian xuất phát', 'gio leo'],
+      [COL_SAFETY_COMMIT]: ['safetycommit', 'cam kết an toàn', 'cam kết', 'trạng thái cam kết'],
+      [COL_MEMBER_LIST]: ['memberlist', 'danh sách thành viên', 'danh sách đoàn', 'thành viên'],
+      [COL_STATUS]: ['status', 'trạng thái'],
+      [COL_CERT_LINKS]: ['certificatelinks', 'link chứng chỉ', 'chứng chỉ', 'link chứng nhận', 'chứng nhận'],
+      [COL_BIRTHDAY]: ['birthday', 'ngày sinh', 'năm sinh', 'ngaysinh'],
+      [COL_CCCD]: ['cccd', 'cmnd', 'căn cước', 'số cccd', 'cmnd/cccd'],
+      [COL_SIGNATURE_IMAGE]: ['signatureimage', 'chữ ký', 'ảnh chữ ký'],
+      [COL_COMMITMENT_PDF]: ['commitmentpdflink', 'link cam kết pdf', 'bản cam kết pdf', 'pdf cam kết']
+    };
+
+    function normalizePhone(phone) {
+      if (phone === null || phone === undefined) return '';
+      let clean = String(phone).replace(/^'/, '').replace(/[\s\.\-\(\)]/g, '').trim();
+      if (/^[1-9]\d{8}$/.test(clean)) {
+        clean = '0' + clean;
+      }
+      return clean;
+    }
+
+    const STANDARD_COLUMN_INDICES = {
+      [COL_TIMESTAMP]: 1,
+      [COL_LEADER_NAME]: 2,
+      [COL_PHONE_NUMBER]: 3,
+      [COL_ADDRESS]: 4,
+      [COL_GROUP_SIZE]: 5,
+      [COL_EMAIL]: 6,
+      [COL_CLIMB_DATE]: 7,
+      [COL_CLIMB_TIME]: 8,
+      [COL_SAFETY_COMMIT]: 9,
+      [COL_MEMBER_LIST]: 10,
+      [COL_STATUS]: 11,
+      [COL_CERT_LINKS]: 12,
+      [COL_BIRTHDAY]: 13,
+      [COL_CCCD]: 14,
+      [COL_SIGNATURE_IMAGE]: 15,
+      [COL_COMMITMENT_PDF]: 16
+    };
+
     // --- Cache Management ---
-    let _sheetCache = null;
-    let _columnCache = null;
-    let _lastCacheTime = 0;
-
     function getCachedSheet() {
-      const now = Date.now();
-      if (!_sheetCache || (now - _lastCacheTime) > (300 * 1000)) { // 5 minutes cache
-        const dataSheets = getAllDataSheets();
-        _sheetCache = dataSheets.length > 0 ? dataSheets[dataSheets.length - 1] : SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
-        _lastCacheTime = now;
-      }
-      return _sheetCache;
+      const dataSheets = getAllDataSheets();
+      return dataSheets.length > 0 ? dataSheets[0] : SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
     }
 
-    function getCachedColumnIndices(sheet) {
-      if (!_columnCache) {
-        _columnCache = getColumnIndices(sheet);
-        Logger.log(`Column indices cached: ${JSON.stringify(_columnCache)}`);
-      }
-      return _columnCache;
+    function getCachedColumnIndices() {
+      return STANDARD_COLUMN_INDICES;
     }
 
-    // --- getColumnIndices function (same as dangkytaochungnhan.gs) ---
+    // --- getColumnIndices function with aliases ---
     function getColumnIndices(sheet) {
-      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      const lastCol = sheet.getLastColumn();
+      if (lastCol < 1) return null;
+      const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
       const indices = {};
       const expectedCols = [
         COL_TIMESTAMP, COL_LEADER_NAME, COL_PHONE_NUMBER, COL_ADDRESS, COL_GROUP_SIZE, COL_EMAIL,
         COL_CLIMB_DATE, COL_CLIMB_TIME, COL_SAFETY_COMMIT, COL_MEMBER_LIST, COL_STATUS, COL_CERT_LINKS,
         COL_BIRTHDAY, COL_CCCD, COL_SIGNATURE_IMAGE, COL_COMMITMENT_PDF
       ];
-      let criticalMissing = false;
+
       expectedCols.forEach(colName => {
         let foundIndex = -1;
-        const lowerCaseColName = colName.toLowerCase();
+        const aliases = HEADER_ALIASES[colName] || [];
+        const lowerColName = colName.toLowerCase();
         for (let i = 0; i < headers.length; i++) { 
-          if (headers[i] && String(headers[i]).toLowerCase() === lowerCaseColName) { 
+          const h = String(headers[i] || '').trim().toLowerCase();
+          if (h === lowerColName || aliases.includes(h)) { 
             foundIndex = i + 1; 
             break; 
           } 
         }
-        if (foundIndex < 1) {
-          Logger.log(`WARN: Column "${colName}" not found.`);
-          // Check if missing column is critical
-          if ([COL_PHONE_NUMBER, COL_LEADER_NAME, COL_EMAIL, COL_MEMBER_LIST].includes(colName)) {
-            criticalMissing = true;
-          }
-        }
         indices[colName] = foundIndex;
       });
-      if (criticalMissing) { 
-        Logger.log("ERROR: Critical columns missing."); 
-        return null; 
-      }
+
       return indices;
     }
 
@@ -182,18 +210,36 @@
 
     const EXCLUDED_SHEET_NAMES = ['XU_LY_TRUNG', 'THONG_KE_LEO_NUI'];
 
-    function getAllDataSheets() {
-      let ss;
-      try {
-        ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-      } catch(e) {
-        ss = SpreadsheetApp.getActiveSpreadsheet();
+    function getAllDataSheets(ssInput) {
+      let ss = ssInput;
+      if (!ss) {
+        try {
+          ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+        } catch(e) {
+          ss = SpreadsheetApp.getActiveSpreadsheet();
+        }
       }
       const sheets = ss.getSheets();
-      return sheets.filter(sheet => !EXCLUDED_SHEET_NAMES.includes(sheet.getName()));
+      const filtered = sheets.filter(sheet => !EXCLUDED_SHEET_NAMES.includes(sheet.getName()));
+
+      return filtered.sort((a, b) => {
+        const nameA = a.getName().trim();
+        const nameB = b.getName().trim();
+        const matchA = nameA.match(/^T(\d{1,2})-(\d{4})$/i);
+        const matchB = nameB.match(/^T(\d{1,2})-(\d{4})$/i);
+
+        if (matchA && matchB) {
+          const yearDiff = parseInt(matchB[2], 10) - parseInt(matchA[2], 10);
+          if (yearDiff !== 0) return yearDiff;
+          return parseInt(matchB[1], 10) - parseInt(matchA[1], 10);
+        }
+        if (matchA) return -1;
+        if (matchB) return 1;
+        return 0;
+      });
     }
 
-    // --- Data Retrieval ---
+    // --- Data Retrieval with Row Normalization ---
     function getSheetData() {
       try {
         const dataSheets = getAllDataSheets();
@@ -201,11 +247,35 @@
 
         dataSheets.forEach(sheet => {
           const lastRow = sheet.getLastRow();
-          if (lastRow >= 2) {
-            const range = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn());
-            const rows = range.getValues();
-            combinedData = combinedData.concat(rows);
-          }
+          if (lastRow < 2) return;
+          const cols = getColumnIndices(sheet);
+          if (!cols) return;
+
+          const rawValues = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getValues();
+          rawValues.forEach((row, rIdx) => {
+            const normalizedRow = new Array(18).fill('');
+
+            normalizedRow[0] = cols[COL_TIMESTAMP] > 0 ? row[cols[COL_TIMESTAMP] - 1] : '';
+            normalizedRow[1] = cols[COL_LEADER_NAME] > 0 ? row[cols[COL_LEADER_NAME] - 1] : '';
+            normalizedRow[2] = cols[COL_PHONE_NUMBER] > 0 ? row[cols[COL_PHONE_NUMBER] - 1] : '';
+            normalizedRow[3] = cols[COL_ADDRESS] > 0 ? row[cols[COL_ADDRESS] - 1] : '';
+            normalizedRow[4] = cols[COL_GROUP_SIZE] > 0 ? row[cols[COL_GROUP_SIZE] - 1] : '';
+            normalizedRow[5] = cols[COL_EMAIL] > 0 ? row[cols[COL_EMAIL] - 1] : '';
+            normalizedRow[6] = cols[COL_CLIMB_DATE] > 0 ? row[cols[COL_CLIMB_DATE] - 1] : '';
+            normalizedRow[7] = cols[COL_CLIMB_TIME] > 0 ? row[cols[COL_CLIMB_TIME] - 1] : '';
+            normalizedRow[8] = cols[COL_SAFETY_COMMIT] > 0 ? row[cols[COL_SAFETY_COMMIT] - 1] : '';
+            normalizedRow[9] = cols[COL_MEMBER_LIST] > 0 ? row[cols[COL_MEMBER_LIST] - 1] : '';
+            normalizedRow[10] = cols[COL_STATUS] > 0 ? row[cols[COL_STATUS] - 1] : '';
+            normalizedRow[11] = cols[COL_CERT_LINKS] > 0 ? row[cols[COL_CERT_LINKS] - 1] : '';
+            normalizedRow[12] = cols[COL_BIRTHDAY] > 0 ? row[cols[COL_BIRTHDAY] - 1] : '';
+            normalizedRow[13] = cols[COL_CCCD] > 0 ? row[cols[COL_CCCD] - 1] : '';
+            normalizedRow[14] = cols[COL_SIGNATURE_IMAGE] > 0 ? row[cols[COL_SIGNATURE_IMAGE] - 1] : '';
+            normalizedRow[15] = cols[COL_COMMITMENT_PDF] > 0 ? row[cols[COL_COMMITMENT_PDF] - 1] : '';
+            normalizedRow[16] = sheet.getName();
+            normalizedRow[17] = rIdx + 2;
+
+            combinedData.push(normalizedRow);
+          });
         });
 
         return combinedData;
@@ -372,22 +442,18 @@
       if (!phone) {
         throw new Error('Vui lòng cung cấp số điện thoại để tìm kiếm.');
       }
-      const searchTerm = phone.trim().replace(/\s+/g, '');
+      const searchTerm = normalizePhone(phone);
       let results = [];
       const scriptTimeZone = Session.getScriptTimeZone();
       const dateFormat = "dd/MM/yyyy";
       const timeFormat = "HH:mm";
 
-      const sheet = getCachedSheet();
-      const cols = getCachedColumnIndices(sheet);
-      if (!cols) {
-        throw new Error('Không thể lấy thông tin cột từ Google Sheet.');
-      }
+      const cols = getCachedColumnIndices();
 
       data.forEach((row, index) => {
-        const rowPhoneNumber = row[cols[COL_PHONE_NUMBER] - 1];
+        const rowPhoneNumber = normalizePhone(row[cols[COL_PHONE_NUMBER] - 1]);
 
-        if (rowPhoneNumber != null && String(rowPhoneNumber).replace(/^'/, '').trim().replace(/\s+/g, '') === searchTerm) {
+        if (rowPhoneNumber && rowPhoneNumber === searchTerm) {
           const registrationTimestampDate = parseDateCell(row[cols[COL_TIMESTAMP] - 1]);
           const climbDate = parseDateCell(row[cols[COL_CLIMB_DATE] - 1]);
           const groupSize = parseGroupSizeCell(row[cols[COL_GROUP_SIZE] - 1]);
@@ -786,44 +852,36 @@
     function handleGetMembersByPhone(data, phoneNumber) {
       Logger.log(`handleGetMembersByPhone for phone: ${phoneNumber}`);
       try {
-        if (!phoneNumber || !/^[0-9]{10,11}$/.test(phoneNumber)) {
+        const cleanPhone = normalizePhone(phoneNumber);
+        if (!cleanPhone || cleanPhone.length < 9) {
           return { success: false, message: 'SĐT không hợp lệ.' };
         }
-        
-        let members = [];
-        let found = false;
-        
-        const dataSheets = getAllDataSheets();
-        for (let s = dataSheets.length - 1; s >= 0; s--) {
-          const sheet = dataSheets[s];
-          const cols = getColumnIndices(sheet);
-          if (!cols || !cols[COL_PHONE_NUMBER] || !cols[COL_MEMBER_LIST]) continue;
 
-          const allData = sheet.getDataRange().getValues();
-          for (let i = allData.length - 1; i >= 1; i--) {
-            const row = allData[i];
-            const sheetPhone = String(row[cols[COL_PHONE_NUMBER] - 1] || '').replace(/^'/, '').trim();
-            if (sheetPhone === phoneNumber) {
-              const listStr = String(row[cols[COL_MEMBER_LIST] - 1] || '').trim();
-              if (listStr) {
-                members = listStr.split('\n').map(name => name.trim()).filter(Boolean);
-              }
-              found = true;
-              Logger.log(`Found members for ${phoneNumber} in sheet "${sheet.getName()}" at row ${i + 1}. Count: ${members.length}`);
-              break;
-            }
-          }
-          if (found) break;
-        }
-        
-        if (!found) {
+        const regDetails = findRegistrationDetails(data, cleanPhone);
+        if (!regDetails) {
           return { success: false, message: `Không tìm thấy đăng ký cho SĐT ${phoneNumber}.` };
         }
-        
-        return { success: true, data: { members: members } };
+
+        let members = [];
+        if (regDetails.memberListString) {
+          members = regDetails.memberListString.split('\n').map(name => name.trim()).filter(Boolean);
+        }
+        if (members.length === 0 && regDetails.leaderName) {
+          members = [regDetails.leaderName];
+        }
+
+        return { 
+          success: true, 
+          data: { 
+            members: members,
+            sheetName: regDetails.sheetName,
+            rowIndex: regDetails.rowIndex,
+            leaderName: regDetails.leaderName
+          } 
+        };
       } catch (error) {
         Logger.log(`!!! ERROR in handleGetMembersByPhone: ${error}`);
-        return { success: false, message: `Lỗi server khi lấy members.` };
+        return { success: false, message: `Lỗi server khi lấy members: ${error.message}` };
       }
     }
 
@@ -1032,45 +1090,69 @@
       });
     }
 
-    // Find registration details by phone number across all data sheets
+    // Find registration details by phone number across all data sheets (Newest first)
     function findRegistrationDetails(data, phoneNumber) {
-      const dataSheets = getAllDataSheets();
+      const searchPhone = normalizePhone(phoneNumber);
+      if (!searchPhone) return null;
 
-      for (let s = dataSheets.length - 1; s >= 0; s--) {
-        const sheet = dataSheets[s];
+      const dataSheets = getAllDataSheets();
+      let bestCandidate = null;
+
+      dataSheets.forEach(sheet => {
         const cols = getColumnIndices(sheet);
-        if (!cols) continue;
+        if (!cols || !cols[COL_PHONE_NUMBER] || cols[COL_PHONE_NUMBER] < 1) return;
+
+        const phoneCol = cols[COL_PHONE_NUMBER];
+        const leaderNameCol = cols[COL_LEADER_NAME] > 0 ? cols[COL_LEADER_NAME] : -1;
+        const emailCol = cols[COL_EMAIL] > 0 ? cols[COL_EMAIL] : -1;
+        const memberListCol = cols[COL_MEMBER_LIST] > 0 ? cols[COL_MEMBER_LIST] : -1;
+        const climbDateCol = cols[COL_CLIMB_DATE] > 0 ? cols[COL_CLIMB_DATE] : -1;
+        const climbTimeCol = cols[COL_CLIMB_TIME] > 0 ? cols[COL_CLIMB_TIME] : -1;
+        const timestampCol = cols[COL_TIMESTAMP] > 0 ? cols[COL_TIMESTAMP] : -1;
 
         const allData = sheet.getDataRange().getValues();
         for (let i = allData.length - 1; i >= 1; i--) {
-          const row = allData[i];
-          const sheetPhone = String(row[cols[COL_PHONE_NUMBER] - 1] || '').replace(/^'/, '').trim();
-          
-          if (sheetPhone === phoneNumber) {
-            const climbDateValue = row[cols[COL_CLIMB_DATE] - 1];
-            const climbTimeValue = String(row[cols[COL_CLIMB_TIME] - 1] || '').trim();
-            const registrationTsValue = row[cols[COL_TIMESTAMP] - 1];
-            const leaderNameValue = String(row[cols[COL_LEADER_NAME] - 1] || 'Bạn').trim();
-            const userEmailValue = String(row[cols[COL_EMAIL] - 1] || '').trim().toLowerCase();
-            const memberListStrValue = String(row[cols[COL_MEMBER_LIST] - 1] || '').trim();
-            
-            Logger.log(`DEBUG findRegDetails: Found in Sheet "${sheet.getName()}", Row ${i+1}. Leader=${leaderNameValue}, Email=${userEmailValue}`);
-            
-            return {
+          const sheetPhone = normalizePhone(allData[i][phoneCol - 1]);
+          if (sheetPhone === searchPhone) {
+            const climbDateValue = climbDateCol > 0 ? allData[i][climbDateCol - 1] : null;
+            const climbTimeValue = climbTimeCol > 0 ? String(allData[i][climbTimeCol - 1] || '').trim() : '';
+            const registrationTsValue = timestampCol > 0 ? allData[i][timestampCol - 1] : null;
+            const leaderNameValue = leaderNameCol > 0 ? String(allData[i][leaderNameCol - 1] || 'Bạn').trim() : 'Bạn';
+            const userEmailValue = emailCol > 0 ? String(allData[i][emailCol - 1] || '').trim().toLowerCase() : '';
+            const memberListStrValue = memberListCol > 0 ? String(allData[i][memberListCol - 1] || '').trim() : '';
+
+            const tsDate = registrationTsValue instanceof Date ? registrationTsValue : (registrationTsValue ? new Date(registrationTsValue) : null);
+            const cDate = climbDateValue instanceof Date ? climbDateValue : (climbDateValue ? new Date(climbDateValue) : null);
+            const sortTime = tsDate ? tsDate.getTime() : (cDate ? cDate.getTime() : 0);
+
+            const candidate = {
               sheet: sheet,
               sheetName: sheet.getName(),
               rowIndex: i + 1,
               leaderName: leaderNameValue, 
               userEmail: userEmailValue || null,
               memberListString: memberListStrValue,
-              climbDate: climbDateValue instanceof Date ? climbDateValue : (climbDateValue ? new Date(climbDateValue) : new Date()),
+              climbDate: cDate || new Date(),
               climbTime: climbTimeValue,
-              registrationTimestamp: registrationTsValue instanceof Date ? registrationTsValue : (registrationTsValue ? new Date(registrationTsValue) : null)
+              registrationTimestamp: tsDate,
+              sortTime: sortTime
             };
+
+            if (!bestCandidate || 
+                candidate.sortTime > bestCandidate.sortTime || 
+                (candidate.sortTime === bestCandidate.sortTime && candidate.rowIndex > bestCandidate.rowIndex)) {
+              bestCandidate = candidate;
+            }
           }
         }
+      });
+
+      if (bestCandidate) {
+        Logger.log(`DEBUG findRegDetails: Selected NEWEST registration for ${searchPhone} in Sheet "${bestCandidate.sheetName}", Row ${bestCandidate.rowIndex}. Leader=${bestCandidate.leaderName}, Email=${bestCandidate.userEmail}`);
+        return bestCandidate;
       }
-      Logger.log(`findRegDetails: Phone ${phoneNumber} not found in any sheet.`); 
+
+      Logger.log(`findRegDetails: Phone ${searchPhone} not found in any sheet.`); 
       return null;
     }
 
@@ -1209,66 +1291,45 @@
     function handleFindRegistrationDetails(requestData) {
       try {
         const phoneNumber = String(requestData.phone || '').trim();
+        const cleanPhone = normalizePhone(phoneNumber);
         
-        if (!phoneNumber) {
+        if (!cleanPhone) {
           return createJsonResponse({ 
             success: false, 
             message: 'Số điện thoại không được để trống' 
           });
         }
         
-        Logger.log(`Tìm kiếm đăng ký với số điện thoại: ${phoneNumber}`);
-        
-        const sheet = getCachedSheet();
-        const columnIndices = getCachedColumnIndices(sheet);
-        
-        if (!columnIndices) {
+        Logger.log(`Tìm kiếm đăng ký với số điện thoại: ${cleanPhone}`);
+        const reg = findRegistrationDetails(null, cleanPhone);
+        if (!reg) {
           return createJsonResponse({ 
             success: false, 
-            message: 'Lỗi cấu hình cột trong Google Sheet' 
+            message: `Không tìm thấy đăng ký với số điện thoại ${phoneNumber}` 
           });
         }
         
-        const lastRow = sheet.getLastRow();
-        if (lastRow < 2) {
-          return createJsonResponse({ 
-            success: false, 
-            message: 'Không có dữ liệu đăng ký nào' 
-          });
-        }
+        const sheet = reg.sheet;
+        const row = reg.rowIndex;
+        const rowData = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
         
-        // Search from the most recent entry (bottom to top)
-        for (let row = lastRow; row >= 2; row--) {
-          const phoneCell = sheet.getRange(row, columnIndices[COL_PHONE_NUMBER]);
-          const phoneValue = String(phoneCell.getValue() || '').trim();
-          
-          if (phoneValue === phoneNumber) {
-            // Found the registration, get all data
-            const rowData = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
-            const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-            
-            const registrationData = {};
-            headers.forEach((header, index) => {
-              if (header) {
-                registrationData[header] = rowData[index];
-              }
-            });
-            
-            Logger.log(`Tìm thấy đăng ký cho số điện thoại ${phoneNumber} tại dòng ${row}`);
-            
-            return createJsonResponse({
-              success: true,
-              data: registrationData,
-              message: 'Tìm thấy thông tin đăng ký'
-            });
+        const registrationData = {};
+        headers.forEach((header, index) => {
+          if (header) {
+            registrationData[header] = rowData[index];
           }
-        }
-        
-        return createJsonResponse({ 
-          success: false, 
-          message: 'Không tìm thấy đăng ký với số điện thoại này' 
         });
         
+        Logger.log(`Tìm thấy đăng ký cho số điện thoại ${cleanPhone} tại Sheet "${sheet.getName()}", dòng ${row}`);
+        
+        return createJsonResponse({
+          success: true,
+          data: registrationData,
+          sheetName: sheet.getName(),
+          rowIndex: row,
+          message: 'Tìm thấy thông tin đăng ký'
+        });
       } catch (error) {
         Logger.log(`Lỗi khi tìm kiếm đăng ký: ${error.message}`);
         return createJsonResponse({ 
@@ -1282,10 +1343,10 @@
     function handleUpdateMemberList(requestData) {
       try {
         const phoneNumber = String(requestData.phone || '').trim();
+        const cleanPhone = normalizePhone(phoneNumber);
         const memberList = requestData.memberList || [];
-        const originalMemberList = requestData.originalMemberList || [];
         
-        if (!phoneNumber) {
+        if (!cleanPhone) {
           return createJsonResponse({ 
             success: false, 
             message: 'Số điện thoại không được để trống' 
@@ -1299,87 +1360,51 @@
           });
         }
         
-        Logger.log(`Cập nhật danh sách thành viên cho số điện thoại: ${phoneNumber}`);
-        Logger.log(`Danh sách cũ: ${JSON.stringify(originalMemberList)}`);
-        Logger.log(`Danh sách mới: ${JSON.stringify(memberList)}`);
-        
-        const sheet = getCachedSheet();
-        const columnIndices = getCachedColumnIndices(sheet);
-        
-        if (!columnIndices) {
+        const reg = findRegistrationDetails(null, cleanPhone);
+        if (!reg) {
           return createJsonResponse({ 
             success: false, 
-            message: 'Lỗi cấu hình cột trong Google Sheet' 
+            message: `Không tìm thấy đăng ký với số điện thoại ${phoneNumber}` 
+          });
+        }
+
+        const sheet = reg.sheet;
+        const foundRow = reg.rowIndex;
+        const cols = getColumnIndices(sheet);
+        
+        const memberListColumn = cols ? cols[COL_MEMBER_LIST] : -1;
+        if (memberListColumn < 1) {
+          return createJsonResponse({ 
+            success: false, 
+            message: 'Không tìm thấy cột danh sách thành viên trong sheet' 
           });
         }
         
-        const lastRow = sheet.getLastRow();
-        if (lastRow < 2) {
-          return createJsonResponse({ 
-            success: false, 
-            message: 'Không có dữ liệu đăng ký nào' 
-          });
-        }
-        
-        // Search for the registration
-        let foundRow = -1;
-        for (let row = lastRow; row >= 2; row--) {
-          const phoneCell = sheet.getRange(row, columnIndices[COL_PHONE_NUMBER]);
-          const phoneValue = String(phoneCell.getValue() || '').trim();
-          
-          if (phoneValue === phoneNumber) {
-            foundRow = row;
-            break;
-          }
-        }
-        
-        if (foundRow === -1) {
-          return createJsonResponse({ 
-            success: false, 
-            message: 'Không tìm thấy đăng ký với số điện thoại này' 
-          });
-        }
-        
-        // Update the member list
-        const memberListColumn = columnIndices[COL_MEMBER_LIST];
-        if (!memberListColumn) {
-          return createJsonResponse({ 
-            success: false, 
-            message: 'Không tìm thấy cột danh sách thành viên' 
-          });
-        }
-        
-        const memberListString = JSON.stringify(memberList);
+        const memberListString = memberList.join('\n');
         sheet.getRange(foundRow, memberListColumn).setValue(memberListString);
         
-        // Update group size if the column exists
-        const groupSizeColumn = columnIndices[COL_GROUP_SIZE];
-        if (groupSizeColumn) {
+        const groupSizeColumn = cols ? cols[COL_GROUP_SIZE] : -1;
+        if (groupSizeColumn > 0) {
           sheet.getRange(foundRow, groupSizeColumn).setValue(memberList.length);
         }
         
-        // Clear cache to force refresh
-        _sheetCache = null;
-        _columnCache = null;
-        
-        Logger.log(`Đã cập nhật danh sách thành viên cho dòng ${foundRow}`);
-        Logger.log(`Số thành viên mới: ${memberList.length}`);
+        SpreadsheetApp.flush();
+        Logger.log(`Đã cập nhật danh sách thành viên cho Sheet "${sheet.getName()}", dòng ${foundRow}, số thành viên: ${memberList.length}`);
         
         return createJsonResponse({
           success: true,
           message: `Đã cập nhật thành công danh sách thành viên. Số thành viên: ${memberList.length}`,
           data: {
-            phoneNumber: phoneNumber,
+            phoneNumber: cleanPhone,
             memberCount: memberList.length,
             memberList: memberList
           }
         });
-        
       } catch (error) {
-        Logger.log(`Lỗi khi cập nhật danh sách thành viên: ${error.message}`);
+        Logger.log(`Lỗi khi cập nhật danh sách: ${error.message}`);
         return createJsonResponse({ 
           success: false, 
-          message: `Lỗi khi cập nhật: ${error.message}` 
+          message: `Lỗi khi cập nhật danh sách: ${error.message}` 
         });
       }
     }
