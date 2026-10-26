@@ -4,6 +4,7 @@
 // Configuration
 const CONFIG = {
     GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyWYJtTjYvSFT--TPpV6bk4-o6jKtqXBhe5di-h6ozC2sKscM_i8_PCJxzPpL_bEDNT/exec',
+    CERTIFICATE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzafxB0TBS4_gcPIvaqbINNrnJJ_7aaE9Az3m9EqqkH5s2eo_mbzrRiOOw3jXolS5jfng/exec',
     COMBINED_API_URL: '/.netlify/functions/combined-data',
     NOTIFICATION_CHECK_INTERVAL: 30000, // 30 seconds
     NOTIFICATION_DISPLAY_DURATION: 10000, // 10 seconds
@@ -2520,7 +2521,8 @@ async function handleManualCertificateGeneration(e) {
     
     try {
         // Call Google Apps Script API with text/plain to avoid CORS preflight options failure
-        const response = await fetch(CONFIG.GOOGLE_SCRIPT_URL, {
+        const certEndpoint = CONFIG.CERTIFICATE_SCRIPT_URL || CONFIG.GOOGLE_SCRIPT_URL;
+        const response = await fetch(certEndpoint, {
             method: 'POST',
             redirect: 'follow',
             headers: {

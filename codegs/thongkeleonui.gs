@@ -1023,7 +1023,7 @@
             }
           } catch (certError) {
             Logger.log(`!!! ERROR creating PDF for "${memberName}": ${certError}`);
-            errors.push(`Lỗi tạo PDF cho ${memberName}.`);
+            errors.push(`Lỗi tạo PDF cho ${memberName}: ${certError.message || certError}`);
           }
         });
         
@@ -1248,8 +1248,8 @@
         return pdfFile.getUrl();
 
       } catch (error) {
-        Logger.log(`Lỗi khi tạo chứng chỉ: ${error}`);
-        return null;
+        Logger.log(`Lỗi khi tạo chứng chỉ: ${error.message || error}`);
+        throw error;
       } finally {
         if (copyDoc) {
           try {
