@@ -2625,8 +2625,9 @@ async function searchMemberRegistration() {
     try {
         const response = await fetch(CONFIG.GOOGLE_SCRIPT_URL, {
             method: 'POST',
+            redirect: 'follow',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'text/plain;charset=utf-8'
             },
             body: JSON.stringify({
                 action: 'findRegistrationDetails',
@@ -2884,8 +2885,9 @@ async function saveMemberChanges() {
     try {
         const response = await fetch(CONFIG.GOOGLE_SCRIPT_URL, {
             method: 'POST',
+            redirect: 'follow',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'text/plain;charset=utf-8'
             },
             body: JSON.stringify({
                 action: 'updateMemberList',
