@@ -1790,12 +1790,17 @@ function getStatusText(status) {
 // Initialize manual certificate form
 function initializeManualCertificateForm() {
     const form = document.getElementById('manualCertificateForm');
+    const generateBtn = document.getElementById('generateManualCertBtn');
     const addMemberBtn = document.getElementById('addMemberBtn');
     const resetFormBtn = document.getElementById('resetManualFormBtn');
     const loadDataBtn = document.getElementById('loadDataBtn');
     
     if (form) {
         form.addEventListener('submit', handleManualCertificateGeneration);
+    }
+
+    if (generateBtn) {
+        generateBtn.addEventListener('click', handleManualCertificateGeneration);
     }
     
     if (addMemberBtn) {
@@ -2170,31 +2175,44 @@ function showImageCropper(imageSrc, callback) {
 
 // Optimize image for certificate (resize and compress)
 function optimizeImageForCertificate(imageSrc, callback) {
+    if (!imageSrc) {
+        callback(null);
+        return;
+    }
     const img = new Image();
     img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Calculate optimal size (max 400x500 for certificate)
-        const maxWidth = 400;
-        const maxHeight = 500;
-        let { width, height } = img;
-        
-        // Calculate scaling to fit within max dimensions while maintaining aspect ratio
-        const scale = Math.min(maxWidth / width, maxHeight / height);
-        width = Math.round(width * scale);
-        height = Math.round(height * scale);
-        
-        // Set canvas size
-        canvas.width = width;
-        canvas.height = height;
-        
-        // Draw resized image
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Convert to base64 with compression
-        const optimizedImageData = canvas.toDataURL('image/jpeg', 0.85);
-        callback(optimizedImageData);
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Calculate optimal size (max 400x500 for certificate)
+            const maxWidth = 400;
+            const maxHeight = 500;
+            let { width, height } = img;
+            
+            // Calculate scaling to fit within max dimensions while maintaining aspect ratio
+            const scale = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+            
+            // Set canvas size
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw resized image
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert to base64 with compression
+            const optimizedImageData = canvas.toDataURL('image/jpeg', 0.85);
+            callback(optimizedImageData);
+        } catch (err) {
+            console.error('Error optimizing image:', err);
+            callback(imageSrc);
+        }
+    };
+    img.onerror = function() {
+        console.error('Failed to load image for optimization');
+        callback(null);
     };
     
     img.src = imageSrc;
@@ -2394,28 +2412,54 @@ async function loadRegistrationDataByPhone() {
 }
 
 // Handle manual certificate generation
+let isGeneratingManualCert = false;
 async function handleManualCertificateGeneration(e) {
-    e.preventDefault();
+    if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+    }
     
-    const form = e.target;
-    const submitBtn = document.getElementById('generateManualCertBtn');
-    const spinner = document.getElementById('manualCertSpinner');
-    
-    if (!form.checkValidity()) {
-        form.reportValidity();
+    if (isGeneratingManualCert) {
         return;
     }
     
+    const submitBtn = document.getElementById('generateManualCertBtn');
+    const spinner = document.getElementById('manualCertSpinner');
+    
     // Collect form data
-    const phoneNumber = document.getElementById('manualPhone').value.trim();
-    const email = document.getElementById('manualEmail').value.trim();
-    const climbDate = document.getElementById('manualClimbDate').value;
-    const climbTime = document.getElementById('manualClimbTime').value;
-    const duration = document.getElementById('manualDuration').value;
-    const notes = document.getElementById('manualNotes').value.trim();
+    const phoneInput = document.getElementById('manualPhone');
+    const phoneNumber = phoneInput ? phoneInput.value.trim() : '';
+    const emailInput = document.getElementById('manualEmail');
+    const email = emailInput ? emailInput.value.trim() : '';
+    const dateInput = document.getElementById('manualClimbDate');
+    const climbDate = dateInput ? dateInput.value : '';
+    const timeInput = document.getElementById('manualClimbTime');
+    const climbTime = timeInput ? timeInput.value : '';
+    const durationInput = document.getElementById('manualDuration');
+    const duration = durationInput ? durationInput.value : '';
+    const notesInput = document.getElementById('manualNotes');
+    const notes = notesInput ? notesInput.value.trim() : '';
+    
+    // Validate Phone Number
+    if (!phoneNumber || !/^[0-9]{10,11}$/.test(phoneNumber)) {
+        showMessage('Vui lòng nhập số điện thoại đăng ký hợp lệ (10-11 số)', 'error');
+        if (phoneInput) phoneInput.focus();
+        return;
+    }
+    
+    // Validate Email if provided
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showMessage('Email không đúng định dạng. Vui lòng kiểm tra lại hoặc để trống', 'error');
+        if (emailInput) emailInput.focus();
+        return;
+    }
     
     // Collect selected members
     const memberItems = document.querySelectorAll('#manualMemberList .member-item');
+    if (memberItems.length === 0) {
+        showMessage('Chưa có danh sách thành viên. Vui lòng nhấn "Tìm thông tin" hoặc "Thêm thành viên" trước', 'error');
+        return;
+    }
+    
     const selectedMembers = [];
     
     // Process members and photos asynchronously
@@ -2423,7 +2467,7 @@ async function handleManualCertificateGeneration(e) {
         const checkbox = item.querySelector('.member-checkbox');
         const nameInput = item.querySelector('.member-name');
         
-        if (checkbox.checked && nameInput.value.trim()) {
+        if (checkbox && checkbox.checked && nameInput && nameInput.value.trim()) {
             const memberName = nameInput.value.trim();
             const photoItem = document.querySelector(`#manualPhotoUploads .photo-upload-item:nth-child(${index + 1})`);
             
@@ -2438,16 +2482,19 @@ async function handleManualCertificateGeneration(e) {
                 const originalFile = photoItem.getAttribute('data-original-file');
                 
                 if (croppedImage) {
-                    // Use cropped image (already optimized)
                     memberData.photoData = croppedImage;
                     return memberData;
                 } else if (originalFile) {
-                    // Optimize original image before sending
                     return new Promise((resolve) => {
-                        optimizeImageForCertificate(originalFile, (optimizedImage) => {
-                            memberData.photoData = optimizedImage;
+                        try {
+                            optimizeImageForCertificate(originalFile, (optimizedImage) => {
+                                memberData.photoData = optimizedImage;
+                                resolve(memberData);
+                            });
+                        } catch (imgErr) {
+                            console.error('Error optimizing image:', imgErr);
                             resolve(memberData);
-                        });
+                        }
                     });
                 }
             }
@@ -2461,20 +2508,23 @@ async function handleManualCertificateGeneration(e) {
     selectedMembers.push(...resolvedMembers.filter(member => member !== null));
     
     if (selectedMembers.length === 0) {
-        showMessage('Vui lòng chọn ít nhất một thành viên', 'error');
+        showMessage('Vui lòng tích chọn ít nhất một thành viên để tạo chứng nhận', 'error');
         return;
     }
     
     // Show loading state
-    submitBtn.disabled = true;
-    spinner.classList.remove('hidden');
+    isGeneratingManualCert = true;
+    if (submitBtn) submitBtn.disabled = true;
+    if (spinner) spinner.classList.remove('hidden');
+    showMessage(`Đang tiến hành tạo ${selectedMembers.length} chứng nhận, vui lòng chờ...`, 'info');
     
     try {
-        // Call Google Apps Script API
+        // Call Google Apps Script API with text/plain to avoid CORS preflight options failure
         const response = await fetch(CONFIG.GOOGLE_SCRIPT_URL, {
             method: 'POST',
+            redirect: 'follow',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'text/plain;charset=utf-8'
             },
             body: JSON.stringify({
                 action: 'generateCertificatesWithPhotos',
@@ -2487,33 +2537,43 @@ async function handleManualCertificateGeneration(e) {
                     duration: duration,
                     notes: notes
                 },
-                verificationMethod: 'admin' // Thêm để phân biệt với người dùng
+                verificationMethod: 'admin'
             })
         });
         
         if (!response.ok) {
-            throw new Error('Lỗi kết nối server');
+            throw new Error(`Máy chủ phản hồi mã lỗi ${response.status}`);
         }
         
-        const result = await response.json();
+        const rawText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(rawText);
+        } catch (jsonErr) {
+            console.error('Non-JSON response from Google Script:', rawText);
+            throw new Error('Dữ liệu phản hồi từ máy chủ không hợp lệ');
+        }
         
-        if (result.success) {
+        const isSuccess = result.success || (result.pdfLinks && result.pdfLinks.length > 0);
+        
+        if (isSuccess) {
             // Show success result
             const resultDiv = document.getElementById('manualCertResult');
             const detailsDiv = document.getElementById('manualCertDetails');
             
             if (resultDiv && detailsDiv) {
+                const count = result.pdfLinks?.length || result.stats?.success || selectedMembers.length;
                 detailsDiv.innerHTML = `
-                    <p><strong>Thành công:</strong> ${result.message}</p>
-                    <p><strong>Email:</strong> ${email}</p>
-                    <p><strong>Số chứng chỉ:</strong> ${result.stats?.success || 0}</p>
-                    <p><strong>Thời gian:</strong> ${result.stats?.timeSeconds || 0} giây</p>
+                    <p class="font-medium"><strong>Kết quả:</strong> ${result.message || 'Tạo chứng nhận thành công!'}</p>
+                    <p><strong>Email nhận:</strong> ${email || '(không gửi qua email)'}</p>
+                    <p><strong>Số chứng chỉ đã tạo:</strong> ${count}/${selectedMembers.length}</p>
+                    ${result.stats?.timeSeconds ? `<p><strong>Thời gian thực hiện:</strong> ${result.stats.timeSeconds} giây</p>` : ''}
                     ${result.pdfLinks && result.pdfLinks.length > 0 ? `
                         <div class="mt-3">
-                            <p class="font-semibold">Link chứng chỉ:</p>
-                            <ul class="list-disc list-inside space-y-1">
+                            <p class="font-semibold text-slate-800">Danh sách chứng chỉ đã tạo:</p>
+                            <ul class="list-disc list-inside space-y-1 mt-1">
                                 ${result.pdfLinks.map(link => `
-                                    <li><a href="${link.url}" target="_blank" class="text-blue-600 hover:underline">${link.name}</a></li>
+                                    <li><a href="${link.url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline font-medium">${link.name || 'Thành viên'}: Tải chứng nhận (PDF)</a></li>
                                 `).join('')}
                             </ul>
                         </div>
@@ -2524,18 +2584,18 @@ async function handleManualCertificateGeneration(e) {
                 resultDiv.scrollIntoView({ behavior: 'smooth' });
             }
             
-            showMessage('Tạo chứng chỉ thành công!', 'success');
+            showMessage(result.message || 'Tạo chứng chỉ thành công!', 'success');
         } else {
-            showMessage(result.message || 'Có lỗi khi tạo chứng chỉ', 'error');
+            showMessage(result.message || 'Có lỗi khi tạo chứng chỉ từ máy chủ', 'error');
         }
         
     } catch (error) {
         console.error('Error generating manual certificate:', error);
         showMessage('Lỗi khi tạo chứng chỉ: ' + error.message, 'error');
     } finally {
-        // Reset loading state
-        submitBtn.disabled = false;
-        spinner.classList.add('hidden');
+        isGeneratingManualCert = false;
+        if (submitBtn) submitBtn.disabled = false;
+        if (spinner) spinner.classList.add('hidden');
     }
 }
 

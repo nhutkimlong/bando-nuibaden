@@ -13,6 +13,12 @@ const IMAGE_PLACEHOLDER_ALT_TEXT = "PHOTO_PLACEHOLDER";
 const SEND_CONFIRMATION_EMAIL = true;
 const SEND_CERTIFICATE_EMAIL = true;
 const BQL_NAME = "Ban Quản lý Khu du lịch Quốc gia Núi Bà Đen";
+const ADMIN_EMAIL = "truongnklong@gmail.com";
+
+// --- Email Fallback Configuration (Resend API - Không bao giờ bị chặn IP) ---
+const RESEND_API_KEY = PropertiesService.getScriptProperties().getProperty('RESEND_API_KEY') || "";
+const RESEND_SENDER = "Ban Quản lý KDL Quốc gia Núi Bà Đen <onboarding@resend.dev>";
+
 
 // --- Performance Optimization ---
 const CACHE_DURATION = 300; // 5 minutes cache
@@ -431,9 +437,13 @@ function handleRegistration(requestData) {
         htmlBody += `<li>Cam kết an toàn: ${escapeHtml(safetyCommitValue || 'N/A')}</li></ul>`;
         htmlBody += `<p>Vui lòng chuẩn bị kỹ lưỡng theo hướng dẫn và quy định.</p><p>Chúc bạn có chuyến đi an toàn!</p>`;
         htmlBody += `<p>Trân trọng,<br>${escapeHtml(BQL_NAME || 'Ban Quản Lý')}.</p>`;
+        htmlBody += `<hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">`;
+        htmlBody += `<p style="color: #666666; font-size: 13px; font-style: italic; line-height: 1.5;">`;
+        htmlBody += `⚠️ <i>Đây là email tự động gửi từ hệ thống, vui lòng không trả lời trực tiếp (No-reply) vào email này.<br>`;
+        htmlBody += `Mọi thắc mắc hoặc cần hỗ trợ, vui lòng gửi qua email admin: <a href="mailto:${ADMIN_EMAIL}">${ADMIN_EMAIL}</a></i></p>`;
 
-        MailApp.sendEmail({ to: email, subject: subject, htmlBody: htmlBody });
-        Logger.log(`Sent confirmation email to ${email}`);
+        const sendResult = sendSmartEmail(email, subject, htmlBody);
+        Logger.log(`Sent confirmation email result to ${email}: ${JSON.stringify(sendResult)}`);
       } catch (mailError) { Logger.log(`!!! ERROR sending confirmation email: ${mailError}`); }
     } else if (SEND_CONFIRMATION_EMAIL && !email) { Logger.log("Reg success, no email provided."); }
 
@@ -468,23 +478,62 @@ function handleGenerateCertificatesWithPhotos(requestData) {
       ss = SpreadsheetApp.getActiveSpreadsheet();
     }
 
-    const regDetails = findRegistrationDetails(ss, phoneNumber);
+    const regDetails = findRegistrationDetails(phoneNumber, ss);
     if (!regDetails) return createJsonResponse({ success: false, message: `Không tìm thấy đăng ký gốc cho SĐT ${phoneNumber}.` });
 
     const targetSheet = regDetails.sheet;
     const { rowIndex, leaderName = 'Bạn', userEmail = null, climbDate = new Date(), climbTime = '' } = regDetails;
-    Logger.log(`Found registration in Sheet "${targetSheet.getName()}": Row=${rowIndex}, Leader=${leaderName}, Email=${userEmail}, Date=${climbDate}`);
+    const manualData = requestData.manualData || {};
+    const finalEmail = manualData.email || userEmail;
+    const finalClimbTime = manualData.climbTime || climbTime || '';
+    const finalDuration = manualData.duration || '';
+
+    // Ưu tiên ngày:
+    // 1. Ngày leo admin nhập/chọn trên form (manualData.climbDate)
+    // 2. Ngày leo đăng ký trong hệ thống (climbDate)
+    // 3. Thời gian đăng ký (registrationTimestamp)
+    let baseDateForDisplay;
+    if (manualData.climbDate) {
+        const parts = String(manualData.climbDate).split('-');
+        if (parts.length === 3) {
+            baseDateForDisplay = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        } else {
+            baseDateForDisplay = new Date(manualData.climbDate);
+        }
+    } else if (climbDate instanceof Date) {
+        baseDateForDisplay = climbDate;
+    } else if (regDetails.registrationTimestamp instanceof Date) {
+        baseDateForDisplay = regDetails.registrationTimestamp;
+    } else {
+        baseDateForDisplay = new Date();
+    }
+    const dateStr = Utilities.formatDate(baseDateForDisplay, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+
+    const generationDate = new Date();
+    let durationString = '';
+    if (finalDuration) {
+        const durationMinutes = parseInt(finalDuration, 10);
+        if (!isNaN(durationMinutes)) {
+            const hours = Math.floor(durationMinutes / 60);
+            const minutes = durationMinutes % 60;
+            const parts = [];
+            if (hours > 0) parts.push(hours + ' Giờ');
+            if (minutes > 0) parts.push(minutes + ' Phút');
+            if (hours === 0 && minutes === 0) parts.push('0 Phút');
+            durationString = parts.join(' ');
+        }
+    } else {
+        const registrationTime = regDetails.registrationTimestamp instanceof Date ? regDetails.registrationTimestamp : null;
+        const durationMs = registrationTime ? (generationDate.getTime() - registrationTime.getTime()) : null;
+        durationString = durationMs !== null ? formatDurationVi(durationMs) : '';
+    }
+
+    Logger.log(`Found registration in Sheet "${targetSheet.getName()}": Row=${rowIndex}, Leader=${leaderName}, Email=${finalEmail}, DateForDisplay=${dateStr}, ClimbTime=${finalClimbTime}`);
 
     let destFolder;
     try { destFolder = DriveApp.getFolderById(PDF_FOLDER_ID); } catch (e) { Logger.log(`WARN: PDF Folder ID error. Using root. ${e}`); destFolder = DriveApp.getRootFolder(); }
 
     const pdfLinks = [], errors = [];
-    const generationDate = new Date();
-    const registrationTime = regDetails.registrationTimestamp instanceof Date ? regDetails.registrationTimestamp : null;
-    const baseDateForDisplay = registrationTime || climbDate;
-    const dateStr = Utilities.formatDate(baseDateForDisplay, Session.getScriptTimeZone(), 'dd/MM/yyyy');
-    const durationMs = registrationTime ? (generationDate.getTime() - registrationTime.getTime()) : null;
-    const durationString = durationMs !== null ? formatDurationVi(durationMs) : '';
 
     Logger.log(`Generating certs for ${selectedMembers.length} members in batches of ${BATCH_SIZE}...`);
     
@@ -516,7 +565,7 @@ function handleGenerateCertificatesWithPhotos(requestData) {
             try {
                 const safeName = memberName.replace(/[^\p{L}\p{N}\s_-]/gu, '').replace(/\s+/g, '_') || 'Member';
                 const fileNameBase = `ChungNhan_${safeName}_${Utilities.formatDate(generationDate, 'UTC', 'yyyyMMddHHmmss')}`;
-                const pdfUrl = createCertificate(memberName, dateStr, String(climbTime || ''), durationString, photoBase64, TEMPLATE_ID, destFolder, fileNameBase);
+                const pdfUrl = createCertificate(memberName, dateStr, String(finalClimbTime || ''), durationString, photoBase64, TEMPLATE_ID, destFolder, fileNameBase);
                 if (pdfUrl) {
                     pdfLinks.push({ name: memberName, url: pdfUrl });
                     Logger.log(`Success: PDF for ${memberName} (${pdfLinks.length}/${selectedMembers.length})`);
@@ -570,10 +619,14 @@ function handleGenerateCertificatesWithPhotos(requestData) {
             htmlBody += `</ul>`;
             if (errors.length > 0) htmlBody += `<p style="color:red;">⚠️ Lưu ý: Có ${errors.length} lỗi xảy ra khi tạo chứng nhận.</p>`;
             htmlBody += `<p>Xin cảm ơn & hẹn gặp lại!</p><p>Trân trọng,<br>${escapeHtml(BQL_NAME || 'BQL')}.</p>`;
+            htmlBody += `<hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">`;
+            htmlBody += `<p style="color: #666666; font-size: 13px; font-style: italic; line-height: 1.5;">`;
+            htmlBody += `⚠️ <i>Đây là email tự động gửi từ hệ thống, vui lòng không trả lời trực tiếp (No-reply) vào email này.<br>`;
+            htmlBody += `Mọi thắc mắc hoặc cần hỗ trợ, vui lòng gửi qua email admin: <a href="mailto:${ADMIN_EMAIL}">${ADMIN_EMAIL}</a></i></p>`;
 
-            MailApp.sendEmail({ to: userEmail, subject: subject, htmlBody: htmlBody });
-            emailSent = true;
-            Logger.log(`Sent cert links email to ${userEmail}.`);
+            const sendResult = sendSmartEmail(userEmail, subject, htmlBody);
+            emailSent = sendResult.success;
+            Logger.log(`Sent cert links email result to ${userEmail}: ${JSON.stringify(sendResult)}`);
         } catch (mailError) { Logger.log(`!!! ERROR sending cert email: ${mailError}`); }
     } else { Logger.log(`Skipped cert email: Send=${SEND_CERTIFICATE_EMAIL}, Email=${userEmail}, Links=${pdfLinks.length}`); }
 
@@ -851,7 +904,18 @@ function decodeBase64Image(base64String) {
  }
 
 // --- findRegistrationDetails (Cập nhật quét đa sheet) ---
-function findRegistrationDetails(phoneNumber, ssOrSheet) {
+function findRegistrationDetails(arg1, arg2) {
+  let phoneNumber, ssOrSheet;
+  if (typeof arg1 === 'string' || typeof arg1 === 'number') {
+    phoneNumber = arg1;
+    ssOrSheet = arg2;
+  } else if (arg1 && typeof arg1 === 'object') {
+    ssOrSheet = arg1;
+    phoneNumber = arg2;
+  } else {
+    phoneNumber = arg1 || arg2;
+  }
+
   Logger.log(`findRegistrationDetails called for phone: ${phoneNumber}`);
   if (!phoneNumber) return null;
 
@@ -861,6 +925,8 @@ function findRegistrationDetails(phoneNumber, ssOrSheet) {
   let ss;
   if (ssOrSheet && typeof ssOrSheet.getName === 'function' && typeof ssOrSheet.getParent === 'function') {
     ss = ssOrSheet.getParent();
+  } else if (ssOrSheet && typeof ssOrSheet.getSheets === 'function') {
+    ss = ssOrSheet;
   } else {
     try {
       ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -969,3 +1035,119 @@ function createRowArray(columnIndexMap, dataObject) {
      for (const colName in dataObject) { if (dataObject.hasOwnProperty(colName) && columnIndexMap[colName] > 0) newRow[columnIndexMap[colName] - 1] = dataObject[colName]; }
      return newRow;
  }
+
+// --- SMART EMAIL DISPATCHER (MailApp + Resend Fallback) ---
+
+/**
+ * Gửi email thông minh:
+ * 1. Tự động kiểm tra Quota còn lại của Google (MailApp).
+ * 2. Nếu quota > 0, gửi trực tiếp qua MailApp.
+ * 3. Nếu quota = 0 hoặc MailApp lỗi, tự động chuyển tiếp qua Resend API (Không giới hạn IP).
+ */
+function sendSmartEmail(toEmail, subject, htmlBody) {
+  if (!toEmail) {
+    Logger.log("[SmartEmail] Lỗi: Không có địa chỉ email người nhận.");
+    return { success: false, reason: "No email" };
+  }
+
+  let remainingQuota = 0;
+  try {
+    remainingQuota = MailApp.getRemainingDailyQuota();
+    Logger.log(`[SmartEmail] MailApp remaining quota: ${remainingQuota}`);
+  } catch (e) {
+    Logger.log(`[SmartEmail] Không thể đọc Quota MailApp: ${e}`);
+  }
+
+  // 1. Thử gửi qua MailApp nếu còn hạn ngạch Google
+  if (remainingQuota > 0) {
+    try {
+      MailApp.sendEmail({
+        to: toEmail,
+        subject: subject,
+        htmlBody: htmlBody
+      });
+      Logger.log(`[SmartEmail] Đã gửi thành công qua MailApp tới: ${toEmail}`);
+      return { success: true, provider: "MailApp" };
+    } catch (mailErr) {
+      Logger.log(`[SmartEmail] Gửi qua MailApp thất bại (${mailErr}). Chuyển sang Resend...`);
+    }
+  } else {
+    Logger.log(`[SmartEmail] CẢNH BÁO: MailApp đã hết Quota trong ngày (quota=0). Đang chuyển sang Resend...`);
+  }
+
+  // 2. Chuyển sang Resend API nếu có cài đặt API Key
+  if (typeof RESEND_API_KEY !== 'undefined' && RESEND_API_KEY && RESEND_API_KEY.trim()) {
+    try {
+      const resendSuccess = sendViaResendApi(toEmail, subject, htmlBody);
+      if (resendSuccess) {
+        return { success: true, provider: "Resend" };
+      }
+    } catch (resendErr) {
+      Logger.log(`[SmartEmail] Gửi qua Resend thất bại: ${resendErr}`);
+    }
+  }
+
+  Logger.log(`[SmartEmail] Không thể gửi email cho ${toEmail}: Hết quota Google và Resend không thành công.`);
+  return { success: false, reason: "Quota limit reached and fallback failed" };
+}
+
+/**
+ * Gửi email qua Resend API (Không bao giờ bị chặn IP)
+ */
+function sendViaResendApi(toEmail, subject, htmlBody) {
+  const url = "https://api.resend.com/emails";
+  const payload = {
+    from: (typeof RESEND_SENDER !== 'undefined' && RESEND_SENDER) ? RESEND_SENDER : "Ban Quản lý KDL Quốc gia Núi Bà Đen <onboarding@resend.dev>",
+    to: [toEmail],
+    subject: subject,
+    html: htmlBody
+  };
+
+  const options = {
+    method: "post",
+    contentType: "application/json",
+    headers: {
+      "Authorization": "Bearer " + RESEND_API_KEY.trim()
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  const response = UrlFetchApp.fetch(url, options);
+  const code = response.getResponseCode();
+  const resText = response.getContentText();
+
+  if (code >= 200 && code < 300) {
+    Logger.log(`[Resend API] Gửi email thành công tới ${toEmail}. Phản hồi: ${resText}`);
+    return true;
+  } else {
+    Logger.log(`[Resend API] Lỗi gửi email (Mã ${code}): ${resText}`);
+    return false;
+  }
+}
+
+/**
+ * Hàm tiện ích: Kiểm tra Quota hiện tại và Gửi Email Thử Nghiệm
+ * Bạn có thể chọn hàm này trong Apps Script Editor và nhấn [Run / Chạy] để kiểm tra ngay!
+ */
+function kiemTraQuotaVaGuiTest() {
+  const quota = MailApp.getRemainingDailyQuota();
+  const myEmail = Session.getActiveUser().getEmail() || "";
+  
+  Logger.log("=================================================");
+  Logger.log(`>>> HẠN NGẠCH GỬI MAIL GOOGLE CÒN LẠI: ${quota} email`);
+  Logger.log(`>>> RESEND API KEY: ${RESEND_API_KEY ? "ĐÃ CẤU HÌNH" : "CHƯA CẤU HÌNH"}`);
+  Logger.log("=================================================");
+
+  if (myEmail) {
+    Logger.log(`Đang gửi thử nghiệm 1 email tới: ${myEmail}...`);
+    const res = sendSmartEmail(
+      myEmail,
+      "Kiểm tra hệ thống gửi Email - Núi Bà Đen",
+      `<p>Xin chào,</p><p>Hệ thống gửi email của <b>Núi Bà Đen</b> đang hoạt động tốt!</p><p>Hạn ngạch Google hiện tại: <b>${quota}</b> email.</p>`
+    );
+    Logger.log(`Kết quả gửi thử nghiệm: ${JSON.stringify(res)}`);
+  } else {
+    Logger.log("Không lấy được email tài khoản đang chạy để gửi thử nghiệm.");
+  }
+}

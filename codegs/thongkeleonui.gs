@@ -939,8 +939,22 @@
 
       const pdfLinks = [], errors = [];
       const generationDate = new Date();
-      const registrationTime = regDetails.registrationTimestamp instanceof Date ? regDetails.registrationTimestamp : null;
-      const baseDateForDisplay = registrationTime || finalClimbDate;
+      // Determine date for display: priority manualData.climbDate > regDetails.climbDate > registrationTimestamp > today
+      let baseDateForDisplay;
+      if (manualData.climbDate) {
+        const parts = String(manualData.climbDate).split('-');
+        if (parts.length === 3) {
+          baseDateForDisplay = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        } else {
+          baseDateForDisplay = new Date(manualData.climbDate);
+        }
+      } else if (climbDate instanceof Date) {
+        baseDateForDisplay = climbDate;
+      } else if (regDetails.registrationTimestamp instanceof Date) {
+        baseDateForDisplay = regDetails.registrationTimestamp;
+      } else {
+        baseDateForDisplay = new Date();
+      }
       const dateStr = Utilities.formatDate(baseDateForDisplay, Session.getScriptTimeZone(), 'dd/MM/yyyy');
       
       // Calculate duration string
@@ -1091,7 +1105,15 @@
     }
 
     // Find registration details by phone number across all data sheets (Newest first)
-    function findRegistrationDetails(data, phoneNumber) {
+    function findRegistrationDetails(arg1, arg2) {
+      let phoneNumber;
+      if (typeof arg1 === 'string' || typeof arg1 === 'number') {
+        phoneNumber = arg1;
+      } else if (typeof arg2 === 'string' || typeof arg2 === 'number') {
+        phoneNumber = arg2;
+      } else {
+        phoneNumber = arg1 || arg2;
+      }
       const searchPhone = normalizePhone(phoneNumber);
       if (!searchPhone) return null;
 
