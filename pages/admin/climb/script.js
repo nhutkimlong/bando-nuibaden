@@ -2607,6 +2607,40 @@ async function handleManualCertificateGeneration(e) {
 let currentMemberData = null;
 let originalMemberList = [];
 
+// Helper function to safely parse member list (supports JSON array, newline-separated text, or comma-separated)
+function parseMemberList(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.map(m => String(m).trim()).filter(Boolean);
+    if (typeof raw !== 'string') return [String(raw).trim()].filter(Boolean);
+    
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    
+    // Check if it's JSON
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) {
+                return parsed.map(m => String(m).trim()).filter(Boolean);
+            }
+        } catch (e) {
+            // Not valid JSON, continue to string splitting
+        }
+    }
+    
+    // Split by newlines
+    if (trimmed.includes('\n')) {
+        return trimmed.split('\n').map(m => m.trim()).filter(Boolean);
+    }
+    
+    // Split by commas
+    if (trimmed.includes(',')) {
+        return trimmed.split(',').map(m => m.trim()).filter(Boolean);
+    }
+    
+    return [trimmed];
+}
+
 // Search for member registration
 async function searchMemberRegistration() {
     const phoneNumber = document.getElementById('memberSearchPhone').value.trim();
@@ -2643,7 +2677,7 @@ async function searchMemberRegistration() {
         
         if (result.success && result.data) {
             currentMemberData = result.data;
-            originalMemberList = JSON.parse(result.data.MemberList || '[]');
+            originalMemberList = parseMemberList(result.data.MemberList);
             
             displayMemberRegistrationInfo(result.data);
             displayMemberList(originalMemberList);
@@ -2682,7 +2716,7 @@ function displayMemberRegistrationInfo(data) {
     }
     document.getElementById('memberRegDate').value = regDate;
     
-    const memberList = JSON.parse(data.MemberList || '[]');
+    const memberList = parseMemberList(data.MemberList);
     document.getElementById('memberRegCount').value = memberList.length;
     
     // Display detailed information
